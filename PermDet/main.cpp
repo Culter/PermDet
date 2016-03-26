@@ -9,20 +9,14 @@
 #include <algorithm>
 #include <array>
 #include <iostream>
-#include <vector>
 
 constexpr int N = 4;
-constexpr int NN = N * N;
 
-std::vector<std::bitset<NN>> patterns;
-std::array<std::vector<std::bitset<N * N - N>>, N> patterns_by_row;
-
-uint64_t num(const std::bitset<NN>& bits) {
-  for (const auto& pattern: patterns) {
-    if ((bits & pattern) == pattern) return 0;
-  }
-  return 1;
+constexpr uint64_t factorial(uint64_t n) {
+  return (n == 0) ? 1 : (n * factorial(n - 1));
 }
+
+std::array<std::array<std::bitset<N * N - N>, factorial(N) / (2 * N)>, N> patterns_by_row;
 
 bool is_free(const std::bitset<N * N - N>& bits, int row) {
   for (const auto& pattern: patterns_by_row[row]) {
@@ -58,43 +52,33 @@ int main() {
   for (int i = 0; i < N; ++i) {
     perm[i] = i;
   }
+  std::array<int, N> known_perms = {};
   do {
     if (is_odd(perm)) {
-      std::bitset<NN> bits = 0;
-      for (int i = 0; i < N; ++i) {
-        bits[i + perm[i] * N] = 1;
-      }
-//      std::cout << "Odd pattern: " << bits << std::endl;
-      patterns.push_back(bits);
-      
-      std::bitset<N * N - N> first_bits = 0;
+      std::bitset<N * N - N> bits = 0;
       for (int i = 0; i < N - 1; ++i) {
-        first_bits.set(i * N + perm[i]);
+        bits.set(i * N + perm[i]);
       }
-      patterns_by_row[perm[N-1]].push_back(first_bits);
+      int row = perm[N - 1];
+      patterns_by_row[row][known_perms[row]] = bits;
+      known_perms[row] += 1;
     }
   } while (std::next_permutation(perm.begin(), perm.end()));
   
   for (int i = 0; i < N; ++i) {
-    std::cout << "Patterns at " << i << ":" << std::endl;
-    for (const auto& p: patterns_by_row[i]) {
-      std::cout << p << std::endl;
+    if (known_perms[i] != patterns_by_row[i].size()) {
+      std::cout << "Fail!" << std::endl;
+      return 1;
     }
   }
-  
-//  uint64_t sum = 0;
-//  for (uint64_t i = 0; i < (uint64_t(1) << (N * N)); ++i) {
-//    std::bitset<NN> bits = i;
-//    uint64_t n = num(bits);
-////    std::cout << i << ": " << bits << ": " << n << std::endl;
-//    sum += n;
-//  }
   
   uint64_t sum = 0;
   for (uint64_t i = 0; i < (uint64_t(1) << (N * N - N)); ++i) {
     std::bitset<N * N - N> bits = i;
     uint64_t n = num(bits);
-    std::cout << i << ": " << bits << ": " << n << std::endl;
+//    if ((N * N - N - 24) < 0 || i % (uint64_t(1) << (N * N - N - 24)) == 0) {
+//      std::cout << i << ": " << bits << ": " << n << std::endl;
+//    }
     sum += n;
   }
   
