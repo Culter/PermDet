@@ -17,17 +17,17 @@ constexpr uint64_t factorial(uint64_t n) {
   return (n == 0) ? 1 : (n * factorial(n - 1));
 }
 
-// Returns true if perm is an odd permutation; false if it is even
-bool is_odd(const std::array<int, N>& perm) {
-  bool answer = false;
+// Returns 1 if perm is an odd permutation; 0 if it is even
+bool get_parity(const std::array<int, N>& perm) {
+  int parity = 0;
   for (int i = 0; i < N; ++i) {
     for (int j = i + 1; j < N; ++j) {
       if (perm[i] > perm[j]) {
-        answer = !answer;
+        parity = !parity;
       }
     }
   }
-  return answer;
+  return parity;
 }
 
 std::array<int, N> identity() {
@@ -38,12 +38,23 @@ std::array<int, N> identity() {
   return perm;
 }
 
-std::array<std::array<int, N>, factorial(N) / 2> odd_permutations() {
+std::array<std::array<int, N>, factorial(N)> permutations() {
+  std::array<std::array<int, N>, factorial(N)> answer;
+  std::array<int, N> perm = identity();
+  int count = 0;
+  do {
+    answer[count] = perm;
+    count += 1;
+  } while (std::next_permutation(perm.begin(), perm.end()));
+  return answer;
+}
+
+std::array<std::array<int, N>, factorial(N) / 2> permutations(int parity) {
   std::array<std::array<int, N>, factorial(N) / 2> answer;
   std::array<int, N> perm = identity();
   int count = 0;
   do {
-    if (is_odd(perm)) {
+    if (get_parity(perm) == parity) {
       answer[count] = perm;
       count += 1;
     }
@@ -59,6 +70,43 @@ Matrix matrix_from(std::array<int, N> permutation) {
     bits.set(i + N * permutation[i]);
   }
   return bits;
+}
+
+Matrix matrix_from_rows(std::array<Matrix, N> rows) {
+  Matrix bits = 0;
+  for (int i = 0; i < N; ++i) {
+    bits |= (rows[i] << i * N);
+  }
+  return bits;
+}
+
+std::array<Matrix, N> rows_from_matrix(Matrix m) {
+  constexpr Matrix row_mask = ((uint64_t)1 << N) - 1;
+  std::array<Matrix, N> rows;
+  for (int i = 0; i < N; ++i) {
+    rows[i] = m & row_mask;
+    m >>= N;
+  }
+  return rows;
+}
+
+Matrix apply(std::array<int, N> permutation, Matrix m) {
+  std::array<Matrix, N> rows = rows_from_matrix(m);
+  std::array<Matrix, N> new_rows;
+  for (int i = 0; i < N; ++i) {
+    new_rows[permutation[i]] = rows[i];
+  }
+  return matrix_from_rows(new_rows);
+}
+
+std::array<Matrix, factorial(N)> row_swaps(Matrix m) {
+  std::array<Matrix, factorial(N)> answer;
+  int count = 0;
+  for (auto permutation: permutations()) {
+    answer[count] = apply(permutation, m);
+    count += 1;
+  }
+  return answer;
 }
 
 #endif /* math_utils_h */
