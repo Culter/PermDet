@@ -9,15 +9,18 @@
 #include <algorithm>
 #include <array>
 #include <iostream>
+#include <thread>
+#include <vector>
+#include <mutex>
 
 // The number of rows and columns of the matrices to count.
-constexpr int N = 3;
+constexpr int N = 8;
 
 static_assert(N > 2, "N must be at least 3 to provide exactly N!/2N patterns per row.");
 
 #include "math_utils.h"
 
-// patterns_by_column[0/1][i] is a list of even/odd permutations that intersect row i on the last column
+// patterns[0/1][i] is a list of even/odd permutations that intersect row i on the last column
 std::array<std::array<std::array<Matrix, factorial(N) / (2 * N)>, N>, 2> patterns;
 
 uint64_t sum = 0;
@@ -64,67 +67,20 @@ uint64_t degeneracy(Matrix m) {
   return answer;
 }
 
-uint64_t num_1 = 0;
-uint64_t num_2 = 0;
-uint64_t num_4 = 0;
-uint64_t num_8 = 0;
-
-void test(Matrix m) {
-  std::cout << "Permutation n1: ";
-  for (Matrix t: row_swaps(m)) {
-    std::cout << num(t, 1);
-  }
-  std::cout << std::endl;
-}
-
-void count_from(const Matrix& m, bool has_repeat, int last_row_value, int next_row) {
+void count_from(const Matrix& m, bool has_repeat, int last_row_value, int next_row, uint64_t& local_sum) {
   if (next_row >= N) {
-    uint64_t n[2] = {num(m, 0), num(m, 1)};
-    uint64_t d;
-    test(m);
     if (has_repeat) {
-      d = degeneracy(m);
-      sum += n[0] * d;
-      switch (n[0]) {
-        case 1: num_1 += d; break;
-        case 2: num_2 += d; break;
-        case 4: num_4 += d; break;
-        case 8: num_8 += d; break;
-      }
-    }
-    else {
-      d = factorial(N);
-      sum += n[0] * d/2;
-      switch (n[0]) {
-        case 1: num_1 += d/2; break;
-        case 2: num_2 += d/2; break;
-        case 4: num_4 += d/2; break;
-        case 8: num_8 += d/2; break;
-      }
-      sum += n[1] * d/2;
-      switch (n[1]) {
-        case 1: num_1 += d/2; break;
-        case 2: num_2 += d/2; break;
-        case 4: num_4 += d/2; break;
-        case 8: num_8 += d/2; break;
-      }
-    }
-    std::cout << "m=" << m << " num=" << n[0] << "," << n[1] << " deg=" << d << std::endl;
-    if (has_repeat && n[0] != n[1]) {
-      std::cout << "Wha??";
+      local_sum += num(m, 0) * degeneracy(m);
+    } else {
+      local_sum += (num(m, 0) + num(m, 1)) * (factorial(N) / 2);
     }
   }
   else {
-//    for (int value = 0; value < (uint64_t(1) << (N - 1)); ++value) {
-//      Matrix m_next = m | (Matrix(value) << (next_row * N));
-//      count_from(m_next, value, next_row + 1);
-//    }
-    
     Matrix m_next = m | (Matrix(last_row_value) << (next_row * N));
-    count_from(m_next, (next_row > 0), last_row_value, next_row + 1);
+    count_from(m_next, (next_row > 0), last_row_value, next_row + 1, local_sum);
     for (int value = last_row_value + 1; value < (uint64_t(1) << (N - 1)); ++value) {
       m_next = m | (Matrix(value) << (next_row * N));
-      count_from(m_next, has_repeat, value, next_row + 1);
+      count_from(m_next, has_repeat, value, next_row + 1, local_sum);
     }
   }
 }
@@ -140,10 +96,31 @@ int main() {
     }
   }
   
-  count_from(Matrix(0), false, 0, 0);
-  std::cout << "num_1: " << num_1 << std::endl;
-  std::cout << "num_2: " << num_2 << std::endl;
-  std::cout << "num_4: " << num_4 << std::endl;
-  std::cout << "num_8: " << num_8 << std::endl;
+  constexpr uint64_t num_threads = (uint64_t)1 << (N - 1);
+  std::array<uint64_t, num_threads> subtotals = {};
+  
+  // Serial execution, by value of first row (without entry for last column)
+//  for (int i = 0; i < num_threads; ++i) {
+//    count_from(Matrix(i), false, i, 1, subtotals[i]);
+//  }
+  
+  // Parallel execution, by value of first row (without entry for last column)
+  std::vector<std::thread> threads;
+  std::mutex mutex;
+  for (int i = 0; i < num_threads; ++i) {
+    threads.emplace_back([&, i]{
+      count_from(Matrix(i), false, i, 1, subtotals[i]);
+      std::lock_guard<std::mutex> lock(mutex);
+      std::cout << "Thread " << i << ": subtotal " << subtotals[i] << std::endl;
+    });
+  }
+  for (auto& thread: threads) {
+    thread.join();
+  }
+  
+  for (int i = 0; i < num_threads; ++i) {
+    std::cout << "Thread " << i << ": subtotal " << subtotals[i] << std::endl;
+    sum += subtotals[i];
+  }
   std::cout << "sum: " << sum << std::endl;
 }
