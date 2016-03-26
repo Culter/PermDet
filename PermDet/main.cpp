@@ -14,14 +14,14 @@
 #include <mutex>
 
 // The number of rows and columns of the matrices to count.
-constexpr int N = 8;
+constexpr int N = 6;
 
 static_assert(N > 2, "N must be at least 3 to provide exactly N!/2N patterns per row.");
 
 #include "math_utils.h"
 
 // patterns[0/1][i] is a list of even/odd permutations that intersect row i on the last column
-std::array<std::array<std::array<Matrix, factorial(N) / (2 * N)>, N>, 2> patterns;
+std::array<std::array<std::array<Matrix, factorial(N) / (2 * N)>, N>, 2> patterns = {};
 
 uint64_t sum = 0;
 
