@@ -6,21 +6,16 @@
 //  Copyright © 2016 culter. All rights reserved.
 //
 
-#include <algorithm>
 #include <array>
 #include <iostream>
+#include <mutex>
 #include <thread>
 #include <vector>
-#include <mutex>
-
-// The number of rows and columns of the matrices to count.
-constexpr int N = 6;
-
-static_assert(N > 2, "N must be at least 3 to provide exactly N!/2N patterns per row.");
 
 #include "math_utils.h"
 
 // patterns[0/1][i] is a list of even/odd permutations that intersect row i on the last column
+static_assert(N > 2, "N must be at least 3 to provide exactly N!/2N patterns per row.");
 std::array<std::array<std::array<Matrix, factorial(N) / (2 * N)>, N>, 2> patterns = {};
 
 uint64_t sum = 0;
@@ -44,6 +39,7 @@ uint64_t num(const Matrix& m, int parity) {
   return uint64_t(1) << free;
 }
 
+// Returns the number of NxN matrices which can be transformed into m using row swaps.
 uint64_t degeneracy(Matrix m) {
   constexpr Matrix row_mask = ((uint64_t)1 << N) - 1;
   
@@ -67,17 +63,23 @@ uint64_t degeneracy(Matrix m) {
   return answer;
 }
 
-void count_from(const Matrix& m, bool has_repeat, int last_row_value, int next_row, uint64_t& local_sum) {
+// Recursive function to count the eligible matrices with
+// partially specified rows and a blank last column.
+void count_from(const Matrix& m,
+                bool has_repeat,
+                int last_row_value,
+                int next_row,
+                uint64_t& local_sum) {
   if (next_row >= N) {
     if (has_repeat) {
       local_sum += num(m, 0) * degeneracy(m);
     } else {
       local_sum += (num(m, 0) + num(m, 1)) * (factorial(N) / 2);
     }
-  }
-  else {
+  } else {
     Matrix m_next = m | (Matrix(last_row_value) << (next_row * N));
     count_from(m_next, (next_row > 0), last_row_value, next_row + 1, local_sum);
+    
     for (int value = last_row_value + 1; value < (uint64_t(1) << (N - 1)); ++value) {
       m_next = m | (Matrix(value) << (next_row * N));
       count_from(m_next, has_repeat, value, next_row + 1, local_sum);
