@@ -14,30 +14,7 @@
 
 #include "math_utils.h"
 
-// patterns[0/1][i] is a list of even/odd permutations that intersect row i on the last column
-static_assert(N > 2, "N must be at least 3 to provide exactly N!/2N patterns per row.");
-std::array<std::array<std::array<Matrix, factorial(N) / (2 * N)>, N>, 2> patterns = {};
-
 uint64_t sum = 0;
-
-// Returns true if no pattern results from completing m with a 1 in row in the last column
-bool is_free(const Matrix& m, int parity, int row) {
-  for (const auto& pattern: patterns[parity][row]) {
-    if ((m & pattern) == pattern) return false;
-  }
-  return true;
-}
-
-// Returns the number of target matrices that can be formed by completing the last row of m
-uint64_t num(const Matrix& m, int parity) {
-  int free = 0;
-  for (int i = 0; i < N; ++i) {
-    if (is_free(m, parity, i)) {
-      free += 1;
-    }
-  }
-  return uint64_t(1) << free;
-}
 
 // Returns the number of NxN matrices which can be transformed into m using row swaps.
 uint64_t degeneracy(Matrix m) {
@@ -63,62 +40,103 @@ uint64_t degeneracy(Matrix m) {
   return answer;
 }
 
+uint64_t num(const std::vector<Matrix>& mats) {
+  Matrix mask = {};
+  for (int i = 0; i < N; ++i) {
+    mask.set(i * N + N - 1);
+  }
+  Matrix big_or = {};
+  for (const Matrix& m: mats) {
+    big_or |= m;
+  }
+  uint64_t fixed = (big_or & mask).count();
+  uint64_t remaining = N - fixed;
+  
+  std::cout << "    num: mask = " << mask << ", big_or = " << big_or << ", remaining = " << remaining << std::endl;
+  
+  return uint64_t(1) << remaining;
+}
+
 // Recursive function to count the eligible matrices with
 // partially specified rows and a blank last column.
-void count_from(const Matrix& m,
+void count_from(const Matrix& m_base,
                 bool has_repeat,
-                int last_row_value,
-                int next_row,
+                int row_value,
+                int row,
+                const std::vector<Matrix>& surviving_even,
+                const std::vector<Matrix>& surviving_odd,
                 uint64_t& local_sum) {
-  if (next_row >= N) {
+  std::cout << "count_from(" << m_base << ", " << has_repeat << ", " << row_value << ", " << row
+  << ", Matrix[" << surviving_even.size() << "], Matrix[" << surviving_odd.size() << "])" << std::endl;
+  
+  Matrix row_matrix = Matrix(row_value) << (row * N);
+  std::cout << "  row_matrix = " << row_matrix << std::endl;
+  
+  std::vector<Matrix> next_even;
+  std::vector<Matrix> next_odd;
+//  if (!has_repeat) {
+    for (const Matrix& p: surviving_even) {
+      if ((p & row_matrix).any()) {
+        next_even.push_back(p);
+      }
+    }
+//  }
+//  else {
+//    next_even = surviving_even;
+//  }
+  
+  for (const Matrix& p: surviving_odd) {
+    if ((p & row_matrix).any()) {
+      next_odd.push_back(p);
+    }
+  }
+  
+  std::cout << "  next = Matrix[" << next_even.size() << "], Matrix[" << next_odd.size() << "]" << std::endl;
+  
+  Matrix m = m_base | row_matrix;
+  std::cout << "  m = " << m << std::endl;
+  
+  if (row == N - 1) {
     if (has_repeat) {
-      local_sum += num(m, 0) * degeneracy(m);
+      local_sum += num(next_odd) * degeneracy(m);
     } else {
-      local_sum += (num(m, 0) + num(m, 1)) * (factorial(N) / 2);
+      local_sum += (num(next_even) + num(next_odd)) * (factorial(N) / 2);
     }
   } else {
-    Matrix m_next = m | (Matrix(last_row_value) << (next_row * N));
-    count_from(m_next, (next_row > 0), last_row_value, next_row + 1, local_sum);
-    
-    for (int value = last_row_value + 1; value < (uint64_t(1) << (N - 1)); ++value) {
-      m_next = m | (Matrix(value) << (next_row * N));
-      count_from(m_next, has_repeat, value, next_row + 1, local_sum);
+    count_from(m, true, row_value, row + 1, next_even, next_odd, local_sum);
+    for (int next = row_value + 1; next < (uint64_t(1) << N); ++next) {
+      count_from(m, has_repeat, next, row + 1, next_even, next_odd, local_sum);
     }
   }
 }
 
 int main() {
-  // Record both even and odd permutations
-  for (int parity = 0; parity < 2; ++parity) {
-    std::array<int, N> known_perms = {};
-    for (const auto& perm: permutations(parity)) {
-      int row = perm[N - 1];
-      patterns[parity][row][known_perms[row]] = matrix_from(perm);
-      known_perms[row] += 1;
-    }
-  }
+  auto array_even = permutation_matrices(0);
+  auto array_odd = permutation_matrices(1);
+  std::vector<Matrix> vector_even(array_even.cbegin(), array_even.cend());
+  std::vector<Matrix> vector_odd(array_odd.cbegin(), array_odd.cend());
   
   constexpr uint64_t num_threads = (uint64_t)1 << (N - 1);
   std::array<uint64_t, num_threads> subtotals = {};
   
   // Serial execution, by value of first row (without entry for last column)
-//  for (int i = 0; i < num_threads; ++i) {
-//    count_from(Matrix(i), false, i, 1, subtotals[i]);
-//  }
+  for (int i = 0; i < num_threads; ++i) {
+    count_from(Matrix(0), false, i + num_threads, 0, vector_even, vector_odd, subtotals[i]);
+  }
   
   // Parallel execution, by value of first row (without entry for last column)
-  std::vector<std::thread> threads;
-  std::mutex mutex;
-  for (int i = 0; i < num_threads; ++i) {
-    threads.emplace_back([&, i]{
-      count_from(Matrix(i), false, i, 1, subtotals[i]);
-      std::lock_guard<std::mutex> lock(mutex);
-      std::cout << "Thread " << i << ": subtotal " << subtotals[i] << std::endl;
-    });
-  }
-  for (auto& thread: threads) {
-    thread.join();
-  }
+//  std::vector<std::thread> threads;
+//  std::mutex mutex;
+//  for (int i = 0; i < num_threads; ++i) {
+//    threads.emplace_back([&, i]{
+//      count_from(Matrix(0), false, i + num_threads, 0, vector_even, vector_odd, subtotals[i]);
+//      std::lock_guard<std::mutex> lock(mutex);
+//      std::cout << "Thread " << i << ": subtotal " << subtotals[i] << std::endl;
+//    });
+//  }
+//  for (auto& thread: threads) {
+//    thread.join();
+//  }
   
   for (int i = 0; i < num_threads; ++i) {
     std::cout << "Thread " << i << ": subtotal " << subtotals[i] << std::endl;
