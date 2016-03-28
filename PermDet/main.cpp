@@ -37,72 +37,95 @@ uint64_t pow(uint64_t base, int exponent) {
   return answer;
 }
 
-// Recursive function to count the eligible matrices with
-// partially specified rows and a blank last column.
-void count_from(bool has_repeat,
-                int current_streak,
-                uint64_t fact,
-                int row_value,
-                int row,
-                std::vector<Matrix>* scratch_even,
-                std::vector<Matrix>* scratch_odd,
-                uint64_t& local_sum) {
-  Matrix row_matrix = Matrix(row_value) << (row * N);
+class Engine {
+public:
+  Engine(const std::vector<Matrix>& evens,
+         const std::vector<Matrix>& odds):
+  local_sum(0)
+  {
+    scratch_even[0] = evens;
+    scratch_odd[0] = odds;
+    for (int i = 1; i <= N; ++i) {
+      scratch_even[i].reserve(evens.size());
+      scratch_odd[i].reserve(odds.size());
+    }
+  }
   
-  const std::vector<Matrix>& surviving_even = scratch_even[0];
-  const std::vector<Matrix>& surviving_odd = scratch_odd[0];
-  std::vector<Matrix>& next_even = scratch_even[1];
-  std::vector<Matrix>& next_odd = scratch_odd[1];
-  next_even.clear();
-  next_odd.clear();
+  uint64_t Count(int first_row)
+  {
+    count_from(false, 1, 1, first_row + ((uint64_t)1 << (N - 1)), 0);
+    return local_sum;
+  }
   
-  if (has_repeat) {
-    fact *= current_streak;
-  } else {
-    for (const Matrix& p: surviving_even) {
+private:
+  // Recursive function to count the eligible matrices with
+  // partially specified rows and a blank last column.
+  void count_from(bool has_repeat,
+                  int current_streak,
+                  uint64_t fact,
+                  int row_value,
+                  int row) {
+    Matrix row_matrix = Matrix(row_value) << (row * N);
+    
+    const std::vector<Matrix>& surviving_even = scratch_even[row];
+    const std::vector<Matrix>& surviving_odd = scratch_odd[row];
+    std::vector<Matrix>& next_even = scratch_even[row + 1];
+    std::vector<Matrix>& next_odd = scratch_odd[row + 1];
+    next_even.clear();
+    next_odd.clear();
+    
+    if (has_repeat) {
+      fact *= current_streak;
+    } else {
+      for (const Matrix& p: surviving_even) {
+        if ((p & row_matrix).any()) {
+          next_even.push_back(p);
+        }
+      }
+    }
+    
+    for (const Matrix& p: surviving_odd) {
       if ((p & row_matrix).any()) {
-        next_even.push_back(p);
+        next_odd.push_back(p);
+      }
+    }
+    
+    if (next_even.empty() && next_odd.empty()) {
+      while (row < N) {
+        // Add up all matrices with values from this point on.
+        // There are N-1-row rows left to fill.
+        // Each one can take any value from row_value+1 to (uint64_t(1) << N) - 1 inclusive, which is
+        // (uint64_t(1) << N) - 1 - row_value possibilities.
+        // Then there are N bits left to assign.
+        uint64_t base_value = pow((uint64_t(1) << N) - 1 - row_value, N - 1 - row) << N;
+        local_sum += base_value * (factorial(N) / (fact * factorial(N - 1 - row)));
+        
+        // Now consider what happens if the next row is the same as this one...
+        current_streak += 1;
+        fact *= current_streak;
+        row += 1;
+      }
+      return;
+    }
+    
+    if (row == N - 1) {
+      if (has_repeat) {
+        local_sum += num(next_odd) * (factorial(N) / fact);
+      } else {
+        local_sum += (num(next_even) + num(next_odd)) * (factorial(N) / 2);
+      }
+    } else {
+      count_from(true, current_streak + 1, fact, row_value, row + 1);
+      for (int next = row_value + 1; next < (uint64_t(1) << N); ++next) {
+        count_from(has_repeat, 1, fact, next, row + 1);
       }
     }
   }
   
-  for (const Matrix& p: surviving_odd) {
-    if ((p & row_matrix).any()) {
-      next_odd.push_back(p);
-    }
-  }
-  
-  if (next_even.empty() && next_odd.empty()) {
-    while (row < N) {
-      // Add up all matrices with values from this point on.
-      // There are N-1-row rows left to fill.
-      // Each one can take any value from row_value+1 to (uint64_t(1) << N) - 1 inclusive, which is
-      // (uint64_t(1) << N) - 1 - row_value possibilities.
-      // Then there are N bits left to assign.
-      uint64_t base_value = pow((uint64_t(1) << N) - 1 - row_value, N - 1 - row) << N;
-      local_sum += base_value * (factorial(N) / (fact * factorial(N - 1 - row)));
-      
-      // Now consider what happens if the next row is the same as this one...
-      current_streak += 1;
-      fact *= current_streak;
-      row += 1;
-    }
-    return;
-  }
-  
-  if (row == N - 1) {
-    if (has_repeat) {
-      local_sum += num(next_odd) * (factorial(N) / fact);
-    } else {
-      local_sum += (num(next_even) + num(next_odd)) * (factorial(N) / 2);
-    }
-  } else {
-    count_from(true, current_streak + 1, fact, row_value, row + 1, scratch_even + 1, scratch_odd + 1, local_sum);
-    for (int next = row_value + 1; next < (uint64_t(1) << N); ++next) {
-      count_from(has_repeat, 1, fact, next, row + 1, scratch_even + 1, scratch_odd + 1, local_sum);
-    }
-  }
-}
+  std::vector<Matrix> scratch_even[N + 1];
+  std::vector<Matrix> scratch_odd[N + 1];
+  uint64_t local_sum;
+};
 
 int main() {
   for (int i = 0; i < N; ++i) {
@@ -121,15 +144,7 @@ int main() {
   if (serial) {
     // Serial execution, by value of first row (without entry for last column)
     for (int i = 0; i < num_threads; ++i) {
-      std::vector<Matrix> scratch_even[N + 1];
-      std::vector<Matrix> scratch_odd[N + 1];
-      scratch_even[0] = vector_even;
-      scratch_odd[0] = vector_odd;
-      for (int i = 1; i <= N; ++i) {
-        scratch_even[i].reserve(vector_even.size());
-        scratch_odd[i].reserve(vector_odd.size());
-      }
-      count_from(false, 1, 1, i + num_threads, 0, scratch_even, scratch_odd, subtotals[i]);
+      subtotals[i] = Engine(vector_even, vector_odd).Count(i);
       std::cout << "Thread " << i << ": subtotal " << subtotals[i] << std::endl;
       sum += subtotals[i];
     }
@@ -139,15 +154,7 @@ int main() {
     std::mutex mutex;
     for (int i = 0; i < num_threads; ++i) {
       threads.emplace_back([&, i]{
-        std::vector<Matrix> scratch_even[N + 1];
-        std::vector<Matrix> scratch_odd[N + 1];
-        scratch_even[0] = vector_even;
-        scratch_odd[0] = vector_odd;
-        for (int i = 1; i <= N; ++i) {
-          scratch_even[i].reserve(vector_even.size());
-          scratch_odd[i].reserve(vector_odd.size());
-        }
-        count_from(false, 1, 1, i + num_threads, 0, scratch_even, scratch_odd, subtotals[i]);
+        subtotals[i] = Engine(vector_even, vector_odd).Count(i);
         std::lock_guard<std::mutex> lock(mutex);
         std::cout << "Thread " << i << ": subtotal " << subtotals[i] << std::endl;
         sum += subtotals[i];
