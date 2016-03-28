@@ -14,28 +14,7 @@
 
 #include "math_utils.h"
 
-uint64_t sum = 0;
-
 Matrix mask = {};
-
-uint64_t num(const std::vector<Matrix>& mats) {
-  Matrix big_or = {};
-  for (const Matrix& m: mats) {
-    big_or |= m;
-  }
-  uint64_t fixed = (big_or & mask).count();
-  uint64_t remaining = N - fixed;
-  
-  return uint64_t(1) << remaining;
-}
-
-uint64_t pow(uint64_t base, int exponent) {
-  uint64_t answer = 1;
-  for (int i = 0; i < exponent; ++i) {
-    answer *= base;
-  }
-  return answer;
-}
 
 class Engine {
 public:
@@ -58,6 +37,17 @@ public:
   }
   
 private:
+  uint64_t num(const std::vector<Matrix>& mats) {
+    Matrix big_or = {};
+    for (const Matrix& m: mats) {
+      big_or |= m;
+    }
+    uint64_t fixed = (big_or & mask).count();
+    uint64_t remaining = N - fixed;
+    
+    return uint64_t(1) << remaining;
+  }
+  
   // Recursive function to count the eligible matrices with
   // partially specified rows and a blank last column.
   void count_from(bool has_repeat,
@@ -137,6 +127,7 @@ int main() {
   std::vector<Matrix> vector_even(array_even.cbegin(), array_even.cend());
   std::vector<Matrix> vector_odd(array_odd.cbegin(), array_odd.cend());
   
+  uint64_t sum = 0;
   constexpr uint64_t num_threads = (uint64_t)1 << (N - 1);
   std::array<uint64_t, num_threads> subtotals = {};
   

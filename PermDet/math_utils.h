@@ -18,6 +18,15 @@ constexpr int N = 6;
 // A compact representation of a binary matrix.
 typedef std::bitset<N*N> Matrix;
 
+// Standard power function.
+uint64_t pow(uint64_t base, int exponent) {
+  uint64_t answer = 1;
+  for (int i = 0; i < exponent; ++i) {
+    answer *= base;
+  }
+  return answer;
+}
+
 // Standard factorial function.
 constexpr uint64_t factorial(uint64_t n) {
   return (n == 0) ? 1 : (n * factorial(n - 1));
