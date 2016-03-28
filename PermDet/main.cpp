@@ -14,14 +14,17 @@
 
 #include "math_utils.h"
 
-Matrix mask = {};
-
 class Engine {
 public:
   Engine(const std::vector<Matrix>& evens,
          const std::vector<Matrix>& odds):
-  local_sum(0)
+  local_sum(0),
+  mask(0)
   {
+    for (int i = 0; i < N; ++i) {
+      mask.set(i * N + N - 1);
+    }
+    
     scratch_even[0] = evens;
     scratch_odd[0] = odds;
     for (int i = 1; i <= N; ++i) {
@@ -114,14 +117,11 @@ private:
   
   std::vector<Matrix> scratch_even[N + 1];
   std::vector<Matrix> scratch_odd[N + 1];
+  Matrix mask = {};
   uint64_t local_sum;
 };
 
 int main() {
-  for (int i = 0; i < N; ++i) {
-    mask.set(i * N + N - 1);
-  }
-  
   auto array_even = permutation_matrices(0);
   auto array_odd = permutation_matrices(1);
   std::vector<Matrix> vector_even(array_even.cbegin(), array_even.cend());
