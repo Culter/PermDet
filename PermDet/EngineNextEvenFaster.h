@@ -9,6 +9,10 @@
 #ifndef EngineNextEvenFaster_h
 #define EngineNextEvenFaster_h
 
+#include <algorithm>
+
+static constexpr int num_row_values = (uint64_t)1 << (N - 1);
+
 class EngineNextEvenFaster {
 public:
   EngineNextEvenFaster(const std::vector<AugmentedPermutation>& evens,
@@ -21,6 +25,13 @@ public:
       scratch_even[i].reserve(evens.size());
       scratch_odd[i].reserve(odds.size());
     }
+    
+    for (int i = 0; i < num_row_values; ++i) {
+      row_values[i] = i + num_row_values;
+    }
+    std::stable_sort(row_values.begin(), row_values.end(), [] (std::bitset<N> a, std::bitset<N> b) {
+      return a.count() < b.count();
+    });
   }
   
   uint64_t Count(int first_row);
@@ -28,6 +39,7 @@ public:
 public:
   std::vector<AugmentedPermutation> scratch_even[N - 1];
   std::vector<AugmentedPermutation> scratch_odd[N - 1];
+  std::array<std::bitset<N>, num_row_values> row_values;
   uint64_t local_sum;
 };
 
@@ -39,10 +51,10 @@ void count_all_from(EngineNextEvenFaster& that,
   while (row < N) {
     // Add up all matrices with values from this point on.
     // There are N-1-row rows left to fill.
-    // Each one can take any value from row_value+1 to (uint64_t(1) << N) - 1 inclusive, which is
+    // Each one can take any value from row_value+1 to num_row_values - 1 inclusive, which is
     // (uint64_t(1) << N) - 1 - row_value possibilities.
     // Then there are N bits left to assign.
-    uint64_t base_value = pow((uint64_t(1) << N) - 1 - row_value, N - 1 - row) << N;
+    uint64_t base_value = pow(num_row_values - 1 - row_value, N - 1 - row) << N;
     that.local_sum += base_value * (factorial(N) / (fact * factorial(N - 1 - row)));
     
     // Now consider what happens if the next row is the same as this one...
@@ -62,7 +74,7 @@ void count_from(EngineNextEvenFaster& that,
                 int row_value) {
   static_assert(row < N - 2, "This function is meant to be called only for rows before the penultimate row.");
   
-  Matrix row_matrix = Matrix(row_value);
+  auto row_matrix = that.row_values[row_value];
   
   const auto& surviving_even = that.scratch_even[row];
   const auto& surviving_odd = that.scratch_odd[row];
@@ -90,7 +102,7 @@ void count_from(EngineNextEvenFaster& that,
   //    }
   
   count_from<row + 1>(that, true, current_streak + 1, fact, row_value);
-  for (int next = row_value + 1; next < (uint64_t(1) << N); ++next) {
+  for (int next = row_value + 1; next < num_row_values; ++next) {
     count_from<row + 1>(that, has_repeat, 1, fact, next);
   }
 }
@@ -103,7 +115,7 @@ void count_from<N - 2>(EngineNextEvenFaster& that,
                        int row_value) {
   constexpr int row = N - 2;
   constexpr int last_row = N - 1;
-  Matrix row_matrix = Matrix(row_value);
+  auto row_matrix = that.row_values[row_value];
   
   const auto& surviving_even = that.scratch_even[row];
   const auto& surviving_odd = that.scratch_odd[row];
@@ -128,7 +140,7 @@ void count_from<N - 2>(EngineNextEvenFaster& that,
   
   // Single repeat case
   {
-    std::bitset<N> last_row_bits(row_value);
+    std::bitset<N> last_row_bits(that.row_values[row_value]);
     std::bitset<N> odd_taken_column(0);
     for (int c = 0; c < N; ++c) {
       if (last_row_bits[c]) {
@@ -140,21 +152,28 @@ void count_from<N - 2>(EngineNextEvenFaster& that,
   }
   // Continuation cases
   uint64_t degeneracy = factorial(N) / fact;
-  for (int last_row_value = row_value + 1; last_row_value < (uint64_t(1) << N); ++last_row_value) {
-    std::bitset<N> last_row_bits(last_row_value);
-    std::bitset<N> even_taken_column(0);
-    std::bitset<N> odd_taken_column(0);
-    for (int c = 0; c < N; ++c) {
-      if (last_row_bits[c]) {
-        even_taken_column |= even_column_per_bit[c];
-        odd_taken_column |= odd_column_per_bit[c];
-      }
-    }
-    uint64_t even_num = uint64_t(1) << (N - even_taken_column.count());
-    uint64_t odd_num = uint64_t(1) << (N - odd_taken_column.count());
+  for (int last_row_value = row_value + 1; last_row_value < num_row_values; ++last_row_value) {
+    std::bitset<N> last_row_bits(that.row_values[last_row_value]);
     if (has_repeat) {
+      std::bitset<N> odd_taken_column(0);
+      for (int c = 0; c < N; ++c) {
+        if (last_row_bits[c]) {
+          odd_taken_column |= odd_column_per_bit[c];
+        }
+      }
+      uint64_t odd_num = uint64_t(1) << (N - odd_taken_column.count());
       that.local_sum += odd_num * degeneracy;
     } else {
+      std::bitset<N> even_taken_column(0);
+      std::bitset<N> odd_taken_column(0);
+      for (int c = 0; c < N; ++c) {
+        if (last_row_bits[c]) {
+          even_taken_column |= even_column_per_bit[c];
+          odd_taken_column |= odd_column_per_bit[c];
+        }
+      }
+      uint64_t even_num = uint64_t(1) << (N - even_taken_column.count());
+      uint64_t odd_num = uint64_t(1) << (N - odd_taken_column.count());
       that.local_sum += (even_num + odd_num) * (factorial(N) / 2);
     }
   }
@@ -162,7 +181,7 @@ void count_from<N - 2>(EngineNextEvenFaster& that,
 
 uint64_t EngineNextEvenFaster::Count(int first_row)
 {
-  count_from<0>(*this, false, 1, 1, first_row + ((uint64_t)1 << (N - 1)));
+  count_from<0>(*this, false, 1, 1, first_row);
   return local_sum;
 }
 

@@ -27,11 +27,11 @@ int main() {
   auto vector_odd = vector_augmented_permutations(1);
   
   uint64_t sum = 0;
-//  constexpr uint64_t num_threads = (uint64_t)1 << (N - 1);
-  constexpr uint64_t num_threads = (N < 7) ? ((uint64_t)1 << (N - 1)) : 3; // For testing N=7 reasonably fast
+  constexpr uint64_t num_threads = (uint64_t)1 << (N - 1);
+//  constexpr uint64_t num_threads = (N < 7) ? ((uint64_t)1 << (N - 1)) : 3; // For testing N=7 reasonably fast
   std::array<uint64_t, num_threads> subtotals = {};
   
-  bool serial = true;
+  bool serial = false;
   if (serial) {
     // Serial execution, by value of first row (without entry for last column)
     for (int i = 0; i < num_threads; ++i) {
