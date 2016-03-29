@@ -96,10 +96,10 @@ void count_from(EngineNextEvenFaster& that,
   }
   
   // Look for a quick shortcut...
-  //    if (next_even.empty() && next_odd.empty()) {
-  //      count_all_from(current_streak, fact, row_value, row);
-  //      return;
-  //    }
+  if (next_even.empty() && next_odd.empty()) {
+    count_all_from(that, current_streak, fact, row_value, row);
+    return;
+  }
   
   count_from<row + 1>(that, true, current_streak + 1, fact, row_value);
   for (int next = row_value + 1; next < num_row_values; ++next) {
