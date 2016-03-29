@@ -15,22 +15,27 @@
 #include "math_utils.h"
 #include "Engine.h"
 #include "EngineNext.h"
+#include "EngineNextFaster.h"
+#include "EngineNextEvenFaster.h"
 
 int main() {
-  auto array_even = permutation_matrices(0);
-  auto array_odd = permutation_matrices(1);
-  std::vector<Matrix> vector_even(array_even.cbegin(), array_even.cend());
-  std::vector<Matrix> vector_odd(array_odd.cbegin(), array_odd.cend());
+//  auto array_even = permutation_matrices(0);
+//  auto array_odd = permutation_matrices(1);
+//  std::vector<Matrix> vector_even(array_even.cbegin(), array_even.cend());
+//  std::vector<Matrix> vector_odd(array_odd.cbegin(), array_odd.cend());
+  auto vector_even = vector_augmented_permutations(0);
+  auto vector_odd = vector_augmented_permutations(1);
   
   uint64_t sum = 0;
-  constexpr uint64_t num_threads = (uint64_t)1 << (N - 1);
+//  constexpr uint64_t num_threads = (uint64_t)1 << (N - 1);
+  constexpr uint64_t num_threads = (N < 7) ? ((uint64_t)1 << (N - 1)) : 3; // For testing N=7 reasonably fast
   std::array<uint64_t, num_threads> subtotals = {};
   
   bool serial = true;
   if (serial) {
     // Serial execution, by value of first row (without entry for last column)
     for (int i = 0; i < num_threads; ++i) {
-      subtotals[i] = Engine(vector_even, vector_odd).Count(i);
+      subtotals[i] = EngineNextEvenFaster(vector_even, vector_odd).Count(i);
       std::cout << "Thread " << i << ": subtotal " << subtotals[i] << std::endl;
       sum += subtotals[i];
     }
@@ -40,7 +45,7 @@ int main() {
     std::mutex mutex;
     for (int i = 0; i < num_threads; ++i) {
       threads.emplace_back([&, i]{
-        subtotals[i] = Engine(vector_even, vector_odd).Count(i);
+        subtotals[i] = EngineNextEvenFaster(vector_even, vector_odd).Count(i);
         std::lock_guard<std::mutex> lock(mutex);
         std::cout << "Thread " << i << ": subtotal " << subtotals[i] << std::endl;
         sum += subtotals[i];

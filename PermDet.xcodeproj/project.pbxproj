@@ -25,6 +25,8 @@
 /* Begin PBXFileReference section */
 		479E406C1CA9CCA4000C02BA /* Engine.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Engine.h; sourceTree = "<group>"; };
 		479E406D1CAA5422000C02BA /* EngineNext.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EngineNext.h; sourceTree = "<group>"; };
+		479E406E1CAA636C000C02BA /* EngineNextFaster.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EngineNextFaster.h; sourceTree = "<group>"; };
+		479E406F1CAB2206000C02BA /* EngineNextEvenFaster.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EngineNextEvenFaster.h; sourceTree = "<group>"; };
 		47F167CD1CA4FC9E006409C2 /* PermDet */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = PermDet; sourceTree = BUILT_PRODUCTS_DIR; };
 		47F167D01CA4FC9E006409C2 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		47F167D71CA6485E006409C2 /* math_utils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = math_utils.h; sourceTree = "<group>"; };
@@ -63,6 +65,8 @@
 				47F167D71CA6485E006409C2 /* math_utils.h */,
 				479E406C1CA9CCA4000C02BA /* Engine.h */,
 				479E406D1CAA5422000C02BA /* EngineNext.h */,
+				479E406E1CAA636C000C02BA /* EngineNextFaster.h */,
+				479E406F1CAB2206000C02BA /* EngineNextEvenFaster.h */,
 				47F167D01CA4FC9E006409C2 /* main.cpp */,
 			);
 			path = PermDet;
