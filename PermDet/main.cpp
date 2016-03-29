@@ -14,6 +14,7 @@
 
 #include "math_utils.h"
 #include "Engine.h"
+#include "EngineNext.h"
 
 int main() {
   auto array_even = permutation_matrices(0);
@@ -25,7 +26,7 @@ int main() {
   constexpr uint64_t num_threads = (uint64_t)1 << (N - 1);
   std::array<uint64_t, num_threads> subtotals = {};
   
-  bool serial = false;
+  bool serial = true;
   if (serial) {
     // Serial execution, by value of first row (without entry for last column)
     for (int i = 0; i < num_threads; ++i) {
