@@ -14,7 +14,7 @@
 #include <vector>
 
 // The number of rows and columns of the matrices to count.
-constexpr int N = 7;
+constexpr int N = 5;
 
 // A compact representation of a binary matrix.
 typedef std::bitset<N*N> Matrix;
@@ -38,6 +38,19 @@ uint64_t pow(uint64_t base, int exponent) {
 // Standard factorial function.
 constexpr uint64_t factorial(uint64_t n) {
   return (n == 0) ? 1 : (n * factorial(n - 1));
+}
+
+// Returns 1 if perm is an odd permutation; 0 if it is even.
+int get_parity(const std::array<int, N>& perm) {
+  int parity = 0;
+  for (int i = 0; i < N; ++i) {
+    for (int j = i + 1; j < N; ++j) {
+      if (perm[i] > perm[j]) {
+        parity = !parity;
+      }
+    }
+  }
+  return parity;
 }
 
 // Returns 1 if perm is an odd permutation; 0 if it is even.
