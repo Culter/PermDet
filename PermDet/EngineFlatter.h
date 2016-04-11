@@ -153,13 +153,18 @@ public:
   
   EngineFlatter(): offset_maps(), local_sum(0) {
     if (k_debug) std::cout << "EngineFlatter()" << std::endl;
+    mask_even.mask = 0;
     mask_odd.mask = 0;
     for (uint64_t i = 0; i < PermutationTree<N, N>::size; ++i) {
       if (get_parity(PermutationTree<N, N>::perm_from_index(i))) {
         if (k_debug) std::cout << "mask_odd.mask[" << i << "] = true;" << std::endl;
         mask_odd.mask[i] = true;
+      } else {
+        if (k_debug) std::cout << "mask_even[" << i << "] = true;" << std::endl;
+        mask_even.mask[i] = true;
       }
     }
+    mask_even.pre_mask = offset_maps.split(mask_even.mask);
     mask_odd.pre_mask = offset_maps.split(mask_odd.mask);
   }
   
@@ -169,6 +174,7 @@ public:
   
 private:
   const PermutationTree<N, N>::RecursiveOffsetMap offset_maps;
+  PermutationTree<N, N>::RecursiveMask mask_even;
   PermutationTree<N, N>::RecursiveMask mask_odd;
 };
 
@@ -176,6 +182,7 @@ namespace EngineFlatterDetail {
   template<int row>
   void CommitRowValue(EngineFlatter& that,
                       const typename PermutationTree<N, N - row>::RecursiveOffsetMap& offset_map,
+                      typename PermutationTree<N, N - row>::RecursiveMask& mask_even,
                       typename PermutationTree<N, N - row>::RecursiveMask& mask_odd,
                       int current_streak,
                       uint64_t stabilizer,
@@ -185,6 +192,7 @@ namespace EngineFlatterDetail {
   template<int row>
   void CountFollowingRows(EngineFlatter& that,
                           const typename PermutationTree<N, N - row>::RecursiveOffsetMap& offset_map,
+                          typename PermutationTree<N, N - row>::RecursiveMask& mask_even,
                           typename PermutationTree<N, N - row>::RecursiveMask& mask_odd,
                           int current_streak,
                           uint64_t stabilizer,
@@ -195,6 +203,7 @@ namespace EngineFlatterDetail {
   template<int row>
   void CommitRowValue(EngineFlatter& that,
                       const typename PermutationTree<N, N - row>::RecursiveOffsetMap& offset_map,
+                      typename PermutationTree<N, N - row>::RecursiveMask& mask_even,
                       typename PermutationTree<N, N - row>::RecursiveMask& mask_odd,
                       int current_streak,
                       uint64_t stabilizer,
@@ -207,41 +216,20 @@ namespace EngineFlatterDetail {
     ", current_streak=" << current_streak << ", stabilizer=" << stabilizer <<
     ", row_value=" << row_value << ", max_value=" << max_value << ", last_value=" << last_value << ")" << std::endl;
     
-    // row = N - 1 would be the last row, which we factor out
-    // row = N - 2 is the last enumerated row
-    // row = N - 3 is the next-to-last enumerated row
-    // row = N - 4 is the last row that controls the order of following rows
-    if (row < N - 3) {
-      if (row_value == max_value) {
-        current_streak += 1;
-        stabilizer *= current_streak;
-      } else {
-        current_streak = 1;
-      }
+    if (row_value == max_value) {
+      current_streak += 1;
+      stabilizer *= current_streak;
+    } else {
+      current_streak = 1;
       max_value = row_value;
-    } else if (row == N - 3) {
-      if (row_value == max_value) {
-        current_streak += 1;
-        stabilizer *= current_streak;
-      } else {
-        max_value += 1;
-        current_streak = 1;
-      }
-    } else if (row == N - 2) {
-      if (row_value == max_value) {
-        current_streak += 1;
-        stabilizer *= current_streak;
-      }
-//      else if (row_value == last_value) {
-//        current_streak = 2;
-//        stabilizer *= current_streak;
-//      }
     }
     
+    mask_even.child.mask = offset_map.child.combine(mask_even.pre_mask, row_value);
     mask_odd.child.mask = offset_map.child.combine(mask_odd.pre_mask, row_value);
     
     CountFollowingRows<row>(that,
                             offset_map,
+                            mask_even,
                             mask_odd,
                             current_streak,
                             stabilizer,
@@ -253,6 +241,7 @@ namespace EngineFlatterDetail {
   template<int row>
   void CountFollowingRows(EngineFlatter& that,
                           const typename PermutationTree<N, N - row>::RecursiveOffsetMap& offset_map,
+                          typename PermutationTree<N, N - row>::RecursiveMask& mask_even,
                           typename PermutationTree<N, N - row>::RecursiveMask& mask_odd,
                           int current_streak,
                           uint64_t stabilizer,
@@ -264,12 +253,14 @@ namespace EngineFlatterDetail {
     ", current_streak=" << current_streak << ", stabilizer=" << stabilizer <<
     ", row_value=" << row_value << ", max_value=" << max_value << ", last_value=" << last_value << ")" << std::endl;
     
+    mask_even.child.pre_mask = offset_map.child.split(mask_even.child.mask);
     mask_odd.child.pre_mask = offset_map.child.split(mask_odd.child.mask);
     
     for (int next_row_value = max_value; next_row_value < EngineFlatter::num_row_values; ++next_row_value) {
                                                                   
       CommitRowValue<row + 1>(that,
                               offset_map.child,
+                              mask_even.child,
                               mask_odd.child,
                               current_streak,
                               stabilizer,
@@ -282,6 +273,7 @@ namespace EngineFlatterDetail {
   template<>
   void CountFollowingRows<N - 2>(EngineFlatter& that,
                                  const typename PermutationTree<N, 2>::RecursiveOffsetMap& offset_map,
+                                 typename PermutationTree<N, 2>::RecursiveMask& mask_even,
                                  typename PermutationTree<N, 2>::RecursiveMask& mask_odd,
                                  int current_streak,
                                  uint64_t stabilizer,
@@ -292,25 +284,41 @@ namespace EngineFlatterDetail {
     ", current_streak=" << current_streak << ", stabilizer=" << stabilizer <<
     ", row_value=" << row_value << ", max_value=" << max_value << ", last_value=" << last_value << ")" << std::endl;
     
+    if (k_debug) std::cout << "Before adding, local_sum = " << that.local_sum << std::endl;
+    
+    mask_even.child.mask.flip();
     mask_odd.child.mask.flip();
     
-    constexpr uint64_t group_order = (factorial(N - 1) > 1) ? (factorial(N - 1) / 2) : factorial(N - 1);
+    if (k_debug) std::cout << "mask_odd.child.mask = " << mask_odd.child.mask << " (" << mask_odd.child.mask.count() << " 1s)" <<std::endl;
     
-    if (stabilizer > 1) stabilizer /= 2;
+    constexpr uint64_t group_order = factorial(N - 1);
+    uint64_t orbit = group_order / stabilizer;
+    if (k_debug) std::cout << "orbit = " << orbit << std::endl;
     
-    if (k_debug) std::cout << "that.local_sum (" << that.local_sum << ") += 2^" << mask_odd.child.mask.count() << " * ("
-    << group_order << "/" << stabilizer << ") -> ";
+//    that.local_sum += orbit;
     
-    that.local_sum += uint64_t(1) * (group_order / stabilizer);
+    if (orbit % 2 == 0) {
+      that.local_sum += ((uint64_t(1) << mask_odd.child.mask.count()) +
+                         (uint64_t(1) << mask_even.child.mask.count())) * (orbit / 2);
+    } else {
+      if (k_debug) std::cout << "Adding 2^" << mask_odd.child.mask.count() << " * " << orbit << " = "
+        << (uint64_t(1) << mask_odd.child.mask.count()) << " * " << orbit << " = " <<
+        (uint64_t(1) << mask_odd.child.mask.count()) * orbit << std::endl;
+      
+      uint64_t amount_to_add = ((uint64_t(1) << mask_odd.child.mask.count()) * orbit);
+      if (k_debug) std::cout << "Adding " << amount_to_add << " to " << that.local_sum << "..." << std::endl;
+      that.local_sum += ((uint64_t(1) << mask_odd.child.mask.count()) * orbit);
+    }
 //    that.local_sum += (uint64_t(1) << mask_odd.child.mask.count()) * (group_order / stabilizer);
     
-    if (k_debug) std::cout << that.local_sum << std::endl;
+    if (k_debug) std::cout << "After adding, local_sum = " << that.local_sum << std::endl;
   }
 }
 
 uint64_t EngineFlatter::Count(int first_row) {
   EngineFlatterDetail::CommitRowValue<0>(*this,
                                          offset_maps,
+                                         mask_even,
                                          mask_odd,
                                          0,  // current_streak
                                          1,  // stabilizer
