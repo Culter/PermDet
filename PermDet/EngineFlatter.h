@@ -9,8 +9,6 @@
 #ifndef EngineFlatter_h
 #define EngineFlatter_h
 
-constexpr bool k_debug = false;
-
 template<unsigned width, unsigned height>
 struct PermutationTree
 {
@@ -107,7 +105,6 @@ struct PermutationTree
         for (uint64_t i = m * bin_size; i < (m + 1) * bin_size; ++i) {
           if (occupation[i]) {
             answer[m][map[i]] = true;
-//            std::cout << "split: because occupation[" << i << "], answer[" << m << "][" << map[i] << "] = true" << std::endl;
           }
         }
       }
@@ -120,10 +117,8 @@ struct PermutationTree
       for (int m = 0; m < width; ++m) {
         if (mask[m]) {
           answer |= occupation[m];
-//          std::cout << "combine: answer |= occupation[" << m << "] = " << occupation[m] << std::endl;;
         }
       }
-//      std::cout << "combine: answer = " << answer << std::endl;
       return answer;
     }
     
@@ -152,15 +147,12 @@ public:
   static constexpr int num_row_values = ((uint64_t)1 << N);
   
   EngineFlatter(): offset_maps(), local_sum(0) {
-    if (k_debug) std::cout << "EngineFlatter()" << std::endl;
     mask_even.mask = 0;
     mask_odd.mask = 0;
     for (uint64_t i = 0; i < PermutationTree<N, N>::size; ++i) {
       if (get_parity(PermutationTree<N, N>::perm_from_index(i))) {
-        if (k_debug) std::cout << "mask_odd.mask[" << i << "] = true;" << std::endl;
         mask_odd.mask[i] = true;
       } else {
-        if (k_debug) std::cout << "mask_even[" << i << "] = true;" << std::endl;
         mask_even.mask[i] = true;
       }
     }
@@ -187,8 +179,7 @@ namespace EngineFlatterDetail {
                       int current_streak,
                       uint64_t stabilizer,
                       int row_value,
-                      int max_value,
-                      int last_value);
+                      int max_value);
   template<int row>
   void CountFollowingRows(EngineFlatter& that,
                           const typename PermutationTree<N, N - row>::RecursiveOffsetMap& offset_map,
@@ -197,8 +188,7 @@ namespace EngineFlatterDetail {
                           int current_streak,
                           uint64_t stabilizer,
                           int row_value,
-                          int max_value,
-                          int last_value);
+                          int max_value);
   
   template<int row>
   void CommitRowValue(EngineFlatter& that,
@@ -208,13 +198,8 @@ namespace EngineFlatterDetail {
                       int current_streak,
                       uint64_t stabilizer,
                       int row_value,
-                      int max_value,
-                      int last_value) {
+                      int max_value) {
     static_assert(row < N - 1, "This function is meant to be called only for rows before the final row.");
-    
-    if (k_debug) std::cout << "CommitRowValue<" << row << ">(mask_odd.pre_mask[0]=" << mask_odd.pre_mask[0] <<
-    ", current_streak=" << current_streak << ", stabilizer=" << stabilizer <<
-    ", row_value=" << row_value << ", max_value=" << max_value << ", last_value=" << last_value << ")" << std::endl;
     
     if (row_value == max_value) {
       current_streak += 1;
@@ -234,8 +219,7 @@ namespace EngineFlatterDetail {
                             current_streak,
                             stabilizer,
                             row_value,
-                            max_value,
-                            last_value);
+                            max_value);
   }
   
   template<int row>
@@ -246,13 +230,7 @@ namespace EngineFlatterDetail {
                           int current_streak,
                           uint64_t stabilizer,
                           int row_value,
-                          int max_value,
-                          int last_value) {
-    
-    if (k_debug) std::cout << "CountFollowingRows<" << row << ">(mask_odd.child.mask=" << mask_odd.child.mask <<
-    ", current_streak=" << current_streak << ", stabilizer=" << stabilizer <<
-    ", row_value=" << row_value << ", max_value=" << max_value << ", last_value=" << last_value << ")" << std::endl;
-    
+                          int max_value) {
     mask_even.child.pre_mask = offset_map.child.split(mask_even.child.mask);
     mask_odd.child.pre_mask = offset_map.child.split(mask_odd.child.mask);
     
@@ -265,8 +243,7 @@ namespace EngineFlatterDetail {
                               current_streak,
                               stabilizer,
                               next_row_value,
-                              max_value,
-                              row_value);
+                              max_value);
     }
   }
   
@@ -278,40 +255,19 @@ namespace EngineFlatterDetail {
                                  int current_streak,
                                  uint64_t stabilizer,
                                  int row_value,
-                                 int max_value,
-                                 int last_value) {
-    if (k_debug) std::cout << "CountFollowingRows<N-2=" << N - 2 << ">(mask_odd.child.mask=" << mask_odd.child.mask <<
-    ", current_streak=" << current_streak << ", stabilizer=" << stabilizer <<
-    ", row_value=" << row_value << ", max_value=" << max_value << ", last_value=" << last_value << ")" << std::endl;
-    
-    if (k_debug) std::cout << "Before adding, local_sum = " << that.local_sum << std::endl;
-    
+                                 int max_value) {
     mask_even.child.mask.flip();
     mask_odd.child.mask.flip();
     
-    if (k_debug) std::cout << "mask_odd.child.mask = " << mask_odd.child.mask << " (" << mask_odd.child.mask.count() << " 1s)" <<std::endl;
-    
     constexpr uint64_t group_order = factorial(N - 1);
     uint64_t orbit = group_order / stabilizer;
-    if (k_debug) std::cout << "orbit = " << orbit << std::endl;
     
-//    that.local_sum += orbit;
-    
-    if (orbit % 2 == 0) {
+    if (stabilizer == 1) {
       that.local_sum += ((uint64_t(1) << mask_odd.child.mask.count()) +
                          (uint64_t(1) << mask_even.child.mask.count())) * (orbit / 2);
     } else {
-      if (k_debug) std::cout << "Adding 2^" << mask_odd.child.mask.count() << " * " << orbit << " = "
-        << (uint64_t(1) << mask_odd.child.mask.count()) << " * " << orbit << " = " <<
-        (uint64_t(1) << mask_odd.child.mask.count()) * orbit << std::endl;
-      
-      uint64_t amount_to_add = ((uint64_t(1) << mask_odd.child.mask.count()) * orbit);
-      if (k_debug) std::cout << "Adding " << amount_to_add << " to " << that.local_sum << "..." << std::endl;
-      that.local_sum += ((uint64_t(1) << mask_odd.child.mask.count()) * orbit);
+      that.local_sum += (uint64_t(1) << mask_odd.child.mask.count()) * orbit;
     }
-//    that.local_sum += (uint64_t(1) << mask_odd.child.mask.count()) * (group_order / stabilizer);
-    
-    if (k_debug) std::cout << "After adding, local_sum = " << that.local_sum << std::endl;
   }
 }
 
@@ -323,8 +279,7 @@ uint64_t EngineFlatter::Count(int first_row) {
                                          0,  // current_streak
                                          1,  // stabilizer
                                          first_row,
-                                         0,
-                                         -1);
+                                         0);
   return local_sum;
 }
 
