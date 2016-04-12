@@ -13,24 +13,9 @@
 #include <vector>
 
 #include "math_utils.h"
-#include "Engine.h"
-#include "EngineNext.h"
-#include "EngineNextFaster.h"
-#include "EngineNextEvenFaster.h"
 #include "EngineFlatter.h"
 
-int main() {
-//  ColumnOrderer order;
-//  std::cout << "order.column_jumps = " << order.column_jumps << std::endl;
-//  std::cout << order.accepts(std::bitset<6>{"110000"}) << std::endl;
-//  order.append(std::bitset<6>{"110000"});
-//  std::cout << order.accepts(std::bitset<6>{"001100"}) << std::endl;
-//  order.append(std::bitset<6>{"001100"});
-//  std::cout << order.accepts(std::bitset<6>{"101010"}) << std::endl;
-//  order.append(std::bitset<6>{"101010"});
-//  std::cout << "stabilizer() = " << order.stabilizer() << std::endl;
-//  return 0;
-  
+int main() {  
   typedef EngineFlatter ChosenEngine;
   constexpr bool serial = false;
   constexpr bool first_three = false;

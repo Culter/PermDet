@@ -41,17 +41,11 @@ public:
     std::stable_sort(row_values.begin(), row_values.end(), [] (std::bitset<N> a, std::bitset<N> b) {
       return a.count() < b.count();
     });
-//    for (int i = 0; i < num_row_values; ++i) {
-//      std::cout << "row_values[" << i << "] = " << row_values[i] << " = " << std::bitset<N>(row_values[i]) << std::endl;
-//    }
     
     row_class_offsets[0] = 0;
     for (int i = 0; i < num_row_classes; ++i) {
       row_class_offsets[i + 1] = row_class_offsets[i] + factorial(N) / (factorial(i) * factorial(N - i));
     }
-//    for (int i = 0; i <= num_row_classes; ++i) {
-//      std::cout << "row_class_offsets[" << i << "] = " << row_class_offsets[i] << std::endl;
-//    }
     
     if (k_profile) std::fill(work_counts.begin(), work_counts.end(), 0);
   }
@@ -223,22 +217,10 @@ namespace EngineFlatterDetail {
     constexpr uint64_t group_order = factorial(N - 1) * factorial(N);
     uint64_t orbit = group_order / (row_stabilizer * column_stabilizer);
     
-//    for (auto x: that.test_rows) std::cout << x << std::endl;
-//    std::cout << "stab: " << row_stabilizer << "*" << column_stabilizer << " orbit: " << orbit;
-    
     if (row_stabilizer == 1 || column_stabilizer == 1) {
-//      std::cout << " addition: " << "(" << (uint64_t(1) << mask_odd.child.mask.count()) << "+" <<
-//        (uint64_t(1) << mask_even.child.mask.count()) << ") * (" << orbit << " / 2) = " <<
-//        ((uint64_t(1) << mask_odd.child.mask.count()) + (uint64_t(1) << mask_even.child.mask.count())) <<
-//      " * " << (orbit / 2) << " = " << ((uint64_t(1) << mask_odd.child.mask.count()) +
-//                                        (uint64_t(1) << mask_even.child.mask.count())) * (orbit / 2) << std::endl;
-      
       that.local_sum += ((uint64_t(1) << mask_odd.child.mask.count()) +
                          (uint64_t(1) << mask_even.child.mask.count())) * (orbit / 2);
     } else {
-//      std::cout << " addition: " << (uint64_t(1) << mask_odd.child.mask.count()) << " * " << orbit <<
-//      " = " << (uint64_t(1) << mask_odd.child.mask.count()) * orbit << std::endl;
-      
       that.local_sum += (uint64_t(1) << mask_odd.child.mask.count()) * orbit;
     }
   }
