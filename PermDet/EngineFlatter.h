@@ -128,7 +128,7 @@ namespace EngineFlatterDetail {
     that.test_rows[row] = row_value;
     
     // This constant is flexible. It can be as little as 0 or as great as N - 2.
-    constexpr int last_row_for_column_ordering = 1;
+    constexpr int last_row_for_column_ordering = (N >= 3 ? N - 3 : 0);
     
     if (row <= last_row_for_column_ordering) {
       if (column_orderer.accepts(row_value)) {

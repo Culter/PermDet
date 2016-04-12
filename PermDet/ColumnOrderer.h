@@ -33,7 +33,7 @@ struct ColumnOrderer {
     std::bitset<N> forward_jumps = ~row_value & (row_value >> 1);
     column_jumps |= forward_jumps;
     
-    test_rows.emplace_back(row_value);
+//    test_rows.emplace_back(row_value);
   }
   
   int stabilizer() const {
@@ -66,7 +66,7 @@ struct ColumnOrderer {
   // A 1 in position i means that in a more significant row than the current row,
   // there is a difference between i and i+1.
   std::bitset<N> column_jumps;
-  std::vector<std::bitset<N>> test_rows;
+//  std::vector<std::bitset<N>> test_rows;
 };
 
 #endif /* ColumnOrderer_h */
