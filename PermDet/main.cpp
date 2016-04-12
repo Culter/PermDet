@@ -15,9 +15,9 @@
 #include "math_utils.h"
 #include "EngineFlatter.h"
 
-int main() {  
+int main() {
   typedef EngineFlatter ChosenEngine;
-  constexpr bool serial = false;
+  constexpr bool serial = true;  // There's a mysterious bug blocking parallel execution for N = 8.
   constexpr bool first_three = false;
   
   uint64_t sum = 0;
@@ -40,7 +40,8 @@ int main() {
     std::vector<std::thread> threads;
     std::mutex mutex;
     for (int i = 0; i < num_threads; ++i) {
-      threads.emplace_back([&, i]{
+      std::cout << i << std::endl;
+      threads.emplace_back([i, &seed, &mutex, &subtotals, &sum]{
         subtotals[i] = ChosenEngine(seed).Count(i);
         std::lock_guard<std::mutex> lock(mutex);
         std::cout << "Thread " << i << ": subtotal " << subtotals[i] << std::endl;

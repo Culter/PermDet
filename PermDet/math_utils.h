@@ -13,7 +13,7 @@
 #include <array>
 
 // The number of rows and columns of the matrices to count.
-constexpr int N = 7;
+constexpr int N = 8;
 
 // Standard factorial function.
 constexpr uint64_t factorial(uint64_t n) {
