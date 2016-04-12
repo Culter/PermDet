@@ -14,7 +14,7 @@
 #include <vector>
 
 // The number of rows and columns of the matrices to count.
-constexpr int N = 6;
+constexpr int N = 3;
 
 // A compact representation of a binary matrix.
 typedef std::bitset<N*N> Matrix;

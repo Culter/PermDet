@@ -31,6 +31,7 @@
 		479E40AA1CBC76A4000C02BA /* PartialPermutation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PartialPermutation.h; sourceTree = "<group>"; };
 		479E40AB1CBC8123000C02BA /* RecursiveOffsetMap.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RecursiveOffsetMap.h; sourceTree = "<group>"; };
 		479E40AC1CBC816C000C02BA /* RecursiveMask.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RecursiveMask.h; sourceTree = "<group>"; };
+		479E40AD1CBCEAB1000C02BA /* ColumnOrderer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ColumnOrderer.h; sourceTree = "<group>"; };
 		47F167CD1CA4FC9E006409C2 /* PermDet */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = PermDet; sourceTree = BUILT_PRODUCTS_DIR; };
 		47F167D01CA4FC9E006409C2 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		47F167D71CA6485E006409C2 /* math_utils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = math_utils.h; sourceTree = "<group>"; };
@@ -74,6 +75,7 @@
 				479E40AA1CBC76A4000C02BA /* PartialPermutation.h */,
 				479E40AB1CBC8123000C02BA /* RecursiveOffsetMap.h */,
 				479E40AC1CBC816C000C02BA /* RecursiveMask.h */,
+				479E40AD1CBCEAB1000C02BA /* ColumnOrderer.h */,
 				479E40701CACE677000C02BA /* EngineFlatter.h */,
 				47F167D01CA4FC9E006409C2 /* main.cpp */,
 			);

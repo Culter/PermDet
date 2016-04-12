@@ -20,6 +20,17 @@
 #include "EngineFlatter.h"
 
 int main() {
+//  ColumnOrderer order;
+//  std::cout << "order.column_jumps = " << order.column_jumps << std::endl;
+//  std::cout << order.accepts(std::bitset<6>{"110000"}) << std::endl;
+//  order.append(std::bitset<6>{"110000"});
+//  std::cout << order.accepts(std::bitset<6>{"001100"}) << std::endl;
+//  order.append(std::bitset<6>{"001100"});
+//  std::cout << order.accepts(std::bitset<6>{"101010"}) << std::endl;
+//  order.append(std::bitset<6>{"101010"});
+//  std::cout << "stabilizer() = " << order.stabilizer() << std::endl;
+//  return 0;
+  
   typedef EngineFlatter ChosenEngine;
   constexpr bool serial = true;
   constexpr bool first_three = false;
@@ -34,8 +45,10 @@ int main() {
     // Serial execution, by value of first row (without entry for last column)
     for (int i = 0; i < num_threads; ++i) {
       subtotals[i] = ChosenEngine(seed).Count(i);
-      std::cout << "Thread " << i << ": subtotal " << subtotals[i] << std::endl;
-      sum += subtotals[i];
+      if (subtotals[i]) {
+        std::cout << "Thread " << i << ": subtotal " << subtotals[i] << std::endl;
+        sum += subtotals[i];
+      }
     }
   } else {
     // Parallel execution, by value of first row (without entry for last column)
