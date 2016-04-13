@@ -19,7 +19,7 @@
 
 int main() {
   typedef EngineFlatter ChosenEngine;
-  constexpr bool serial = false;
+  constexpr bool serial = true;
   constexpr bool first_three = false;
   
   uint64_t sum = 0;
