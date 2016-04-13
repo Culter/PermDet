@@ -50,7 +50,10 @@ public:
     if (k_profile) std::fill(work_counts.begin(), work_counts.end(), 0);
   }
   
-  uint64_t Count(int first_row);
+  uint64_t Count(int first_row_index);
+  bool Accepts(int first_row_index) {
+    return ColumnOrderer{}.accepts(row_values[first_row_index]);
+  }
   
   uint64_t local_sum;
   
