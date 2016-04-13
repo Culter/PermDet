@@ -9,6 +9,7 @@
 #include "PartialPermutation.h"
 #include "RecursiveOffsetMap.h"
 #include "RecursiveMask.h"
+#include "ImmediateRowOrderer.h"
 #include "ColumnOrderer.h"
 
 #ifndef EngineFlatter_h
@@ -65,8 +66,6 @@ public:
   
   std::array<uint64_t, N> work_counts;
   
-  std::array<std::bitset<N>, N - 1> test_rows;
-  
 private:
   const RecursiveOffsetMap<N, N> offset_maps;
   RecursiveMask<N, N> mask_even;
@@ -79,22 +78,18 @@ namespace EngineFlatterDetail {
                       const RecursiveOffsetMap<N, N - row>& offset_map,
                       RecursiveMask<N, N - row>& mask_even,
                       RecursiveMask<N, N - row>& mask_odd,
-                      int current_streak,
-                      uint64_t row_stabilizer,
+                      ImmediateRowOrderer row_orderer,
                       int row_class,
                       int row_index,
-                      int max_row_class,
                       ColumnOrderer column_orderer);
   template<int row>
   void CountFollowingRows(EngineFlatter& that,
                           const RecursiveOffsetMap<N, N - row>& offset_map,
                           RecursiveMask<N, N - row>& mask_even,
                           RecursiveMask<N, N - row>& mask_odd,
-                          int current_streak,
-                          uint64_t row_stabilizer,
+                          ImmediateRowOrderer row_orderer,
                           int row_class,
                           int row_index,
-                          int max_row_class,
                           ColumnOrderer column_orderer);
   
   template<int row>
@@ -102,24 +97,21 @@ namespace EngineFlatterDetail {
                       const RecursiveOffsetMap<N, N - row>& offset_map,
                       RecursiveMask<N, N - row>& mask_even,
                       RecursiveMask<N, N - row>& mask_odd,
-                      int current_streak,
-                      uint64_t row_stabilizer,
+                      ImmediateRowOrderer row_orderer,
                       int row_class,
                       int row_index,
-                      int max_row_class,
                       ColumnOrderer column_orderer) {
     static_assert(row < N - 1, "This function is meant to be called only for rows before the final row.");
     
-    if (row_class == max_row_class) {
-      current_streak += 1;
-      row_stabilizer *= current_streak;
-    } else {
-      current_streak = 1;
-      max_row_class = row_class;
-    }
+    // Note there is no need to call row_orderer.accepts_class() here; it is assumed the caller already checked that.
     
     int row_value = that.row_values[row_index];
-    that.test_rows[row] = row_value;
+    
+    if (row_orderer.accepts_value(row_value)) {
+      row_orderer.append(row_class, row_value);
+    } else {
+      return;
+    }
     
     // This constant is flexible. It can be as little as 0 or as great as N - 2.
     constexpr int last_row_for_column_ordering = (N >= 3 ? N - 3 : 0);
@@ -136,7 +128,7 @@ namespace EngineFlatterDetail {
       }
     }
     
-    if (row_stabilizer == 1 || column_orderer.stabilizer == 1) {
+    if (row_orderer.stabilizer == 1 || column_orderer.stabilizer == 1) {
       mask_even.child.mask = offset_map.child.combine(mask_even.pre_mask, row_value);
     }
     mask_odd.child.mask = offset_map.child.combine(mask_odd.pre_mask, row_value);
@@ -145,11 +137,9 @@ namespace EngineFlatterDetail {
                             offset_map,
                             mask_even,
                             mask_odd,
-                            current_streak,
-                            row_stabilizer,
+                            row_orderer,
                             row_class,
                             row_index,
-                            max_row_class,
                             column_orderer);
   }
   
@@ -158,33 +148,31 @@ namespace EngineFlatterDetail {
                           const RecursiveOffsetMap<N, N - row>& offset_map,
                           RecursiveMask<N, N - row>& mask_even,
                           RecursiveMask<N, N - row>& mask_odd,
-                          int current_streak,
-                          uint64_t row_stabilizer,
+                          ImmediateRowOrderer row_orderer,
                           int row_class,
                           int row_index,
-                          int max_row_class,
                           ColumnOrderer column_orderer) {
     if (k_profile) that.work_counts[row]++;
       
-    if (row_stabilizer == 1 || column_orderer.stabilizer == 1) {
+    if (row_orderer.stabilizer == 1 || column_orderer.stabilizer == 1) {
       mask_even.child.pre_mask = offset_map.child.split(mask_even.child.mask);
     }
     mask_odd.child.pre_mask = offset_map.child.split(mask_odd.child.mask);
     
-    for (int next_class = max_row_class; next_class < EngineFlatter::num_row_classes; ++next_class) {
-      for (int next_row_index = that.row_class_offsets[next_class];
-           next_row_index < that.row_class_offsets[next_class + 1];
-           ++next_row_index) {
-        CommitRowValue<row + 1>(that,
-                                offset_map.child,
-                                mask_even.child,
-                                mask_odd.child,
-                                current_streak,
-                                row_stabilizer,
-                                next_class,
-                                next_row_index,
-                                max_row_class,
-                                column_orderer);
+    for (int next_class = row_orderer.max_row_class; next_class < EngineFlatter::num_row_classes; ++next_class) {
+      if (row_orderer.accepts_class(next_class)) {
+        for (int next_row_index = that.row_class_offsets[next_class];
+             next_row_index < that.row_class_offsets[next_class + 1];
+             ++next_row_index) {
+          CommitRowValue<row + 1>(that,
+                                  offset_map.child,
+                                  mask_even.child,
+                                  mask_odd.child,
+                                  row_orderer,
+                                  next_class,
+                                  next_row_index,
+                                  column_orderer);
+        }
       }
     }
   }
@@ -194,26 +182,23 @@ namespace EngineFlatterDetail {
                                  const RecursiveOffsetMap<N, 2>& offset_map,
                                  RecursiveMask<N, 2>& mask_even,
                                  RecursiveMask<N, 2>& mask_odd,
-                                 int current_streak,
-                                 uint64_t row_stabilizer,
+                                 ImmediateRowOrderer row_orderer,
                                  int row_class,
                                  int row_index,
-                                 int max_row_class,
                                  ColumnOrderer column_orderer) {
     if (k_profile) that.work_counts[N - 2]++;
     
-    if (row_stabilizer == 1 || column_orderer.stabilizer == 1) {
+    if (row_orderer.stabilizer == 1 || column_orderer.stabilizer == 1) {
       mask_even.child.mask.flip();
     }
     mask_odd.child.mask.flip();
     
-    // The factorial(N-1) comes from the row ordering.
-    // The factorial(N) comes from the column ordering.
-    // It is assumed that the row and column stabilizers have already been accounted for.
+    // The (N-1)! comes from row reordering.
+    // The N! comes from column reordering.
     constexpr uint64_t group_order = factorial(N - 1) * factorial(N);
-    uint64_t orbit = group_order / (row_stabilizer * column_orderer.stabilizer);
+    uint64_t orbit = group_order / (row_orderer.stabilizer * column_orderer.stabilizer);
     
-    if (row_stabilizer == 1 || column_orderer.stabilizer == 1) {
+    if (row_orderer.stabilizer == 1 || column_orderer.stabilizer == 1) {
       that.local_sum += ((uint64_t(1) << mask_odd.child.mask.count()) +
                          (uint64_t(1) << mask_even.child.mask.count())) * (orbit / 2);
     } else {
@@ -223,26 +208,22 @@ namespace EngineFlatterDetail {
 }
 
 uint64_t EngineFlatter::Count(int first_row_index) {
-  int current_streak = 0;
-  uint64_t row_stabilizer = 1;
-  
+  // The loop code needs to know which row class we started with, so just compute it here.
   int first_row_class = 0;
   while (first_row_index >= row_class_offsets[first_row_class + 1]) {
     first_row_class++;
   }
-  int max_row_class = first_row_class;
   
+  ImmediateRowOrderer row_orderer;
   ColumnOrderer column_orderer;
   
   EngineFlatterDetail::CommitRowValue<0>(*this,
                                          offset_maps,
                                          mask_even,
                                          mask_odd,
-                                         current_streak,
-                                         row_stabilizer,
+                                         row_orderer,
                                          first_row_class,
                                          first_row_index,
-                                         max_row_class,
                                          column_orderer);
   if (k_profile) {
     for (int i = 0; i < N; ++i) {
