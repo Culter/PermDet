@@ -14,13 +14,15 @@
 
 #include "math_utils.h"
 #include "EngineFlatter.h"
-
-//__uint128_t asdf = 0;
+#include "CompactMaskTest.h"
 
 int main() {
   typedef EngineFlatter ChosenEngine;
   constexpr bool serial = true;
   constexpr bool first_three = false;
+  
+  CompactMaskTest();
+  exit(0);
   
   uint64_t sum = 0;
   constexpr int num_threads = (first_three && N >= 7) ? 3 : ChosenEngine::num_row_values;

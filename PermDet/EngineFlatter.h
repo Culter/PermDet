@@ -12,6 +12,8 @@
 #include "ImmediateRowOrderer.h"
 #include "ColumnOrderer.h"
 
+#include "CompactMask.h"
+
 #ifndef EngineFlatter_h
 #define EngineFlatter_h
 

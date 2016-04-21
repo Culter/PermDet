@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		47C5EF461CC76CF5008813AC /* CompactMaskTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 47C5EF441CC76CF5008813AC /* CompactMaskTest.cpp */; };
+		47C5EF481CC772ED008813AC /* CompactMask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 47C5EF471CC772ED008813AC /* CompactMask.cpp */; };
 		47F167D11CA4FC9E006409C2 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 47F167D01CA4FC9E006409C2 /* main.cpp */; };
 /* End PBXBuildFile section */
 
@@ -23,12 +25,16 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		47732E801CC4DD7E0047953A /* CompactMask.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CompactMask.h; sourceTree = "<group>"; };
 		479E40701CACE677000C02BA /* EngineFlatter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EngineFlatter.h; sourceTree = "<group>"; };
 		479E40AA1CBC76A4000C02BA /* PartialPermutation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PartialPermutation.h; sourceTree = "<group>"; };
 		479E40AB1CBC8123000C02BA /* RecursiveOffsetMap.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RecursiveOffsetMap.h; sourceTree = "<group>"; };
 		479E40AC1CBC816C000C02BA /* RecursiveMask.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RecursiveMask.h; sourceTree = "<group>"; };
 		479E40AD1CBCEAB1000C02BA /* ColumnOrderer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ColumnOrderer.h; sourceTree = "<group>"; };
 		479E40AE1CBE14D9000C02BA /* ImmediateRowOrderer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ImmediateRowOrderer.h; sourceTree = "<group>"; };
+		47C5EF441CC76CF5008813AC /* CompactMaskTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CompactMaskTest.cpp; sourceTree = "<group>"; };
+		47C5EF451CC76CF5008813AC /* CompactMaskTest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CompactMaskTest.h; sourceTree = "<group>"; };
+		47C5EF471CC772ED008813AC /* CompactMask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CompactMask.cpp; sourceTree = "<group>"; };
 		47F167CD1CA4FC9E006409C2 /* PermDet */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = PermDet; sourceTree = BUILT_PRODUCTS_DIR; };
 		47F167D01CA4FC9E006409C2 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		47F167D71CA6485E006409C2 /* math_utils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = math_utils.h; sourceTree = "<group>"; };
@@ -68,6 +74,10 @@
 				479E40AA1CBC76A4000C02BA /* PartialPermutation.h */,
 				479E40AB1CBC8123000C02BA /* RecursiveOffsetMap.h */,
 				479E40AC1CBC816C000C02BA /* RecursiveMask.h */,
+				47732E801CC4DD7E0047953A /* CompactMask.h */,
+				47C5EF471CC772ED008813AC /* CompactMask.cpp */,
+				47C5EF451CC76CF5008813AC /* CompactMaskTest.h */,
+				47C5EF441CC76CF5008813AC /* CompactMaskTest.cpp */,
 				479E40AE1CBE14D9000C02BA /* ImmediateRowOrderer.h */,
 				479E40AD1CBCEAB1000C02BA /* ColumnOrderer.h */,
 				479E40701CACE677000C02BA /* EngineFlatter.h */,
@@ -133,6 +143,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				47F167D11CA4FC9E006409C2 /* main.cpp in Sources */,
+				47C5EF481CC772ED008813AC /* CompactMask.cpp in Sources */,
+				47C5EF461CC76CF5008813AC /* CompactMaskTest.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -221,6 +233,8 @@
 		47F167D51CA4FC9E006409C2 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
+				CLANG_X86_VECTOR_INSTRUCTIONS = avx2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -228,6 +242,7 @@
 		47F167D61CA4FC9E006409C2 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
 				CLANG_X86_VECTOR_INSTRUCTIONS = avx2;
 				DEAD_CODE_STRIPPING = YES;
 				GCC_UNROLL_LOOPS = YES;

@@ -9,6 +9,8 @@
 #ifndef PartialPermutation_h
 #define PartialPermutation_h
 
+#include <array>
+
 // A class representing the abstract relationship between a partial permutation on (width) letters,
 // occupying (height) rows in matrix form. If height = 1, this degenerates to a single number on [0, width).
 // If height = width, this represents a full permutation.
@@ -32,6 +34,8 @@ struct PartialPermutation
   uint64_t Index() const;
   // Form the partial permutation copied from all but the first row.
   PartialPermutation<width, height - 1> pop_front() const;
+  // Form the partial permutation copied from all but the last row.
+  PartialPermutation<width, height - 1> pop_back() const;
   
   std::array<int, height> rows;
 };
@@ -40,11 +44,7 @@ template<unsigned width>
 struct PartialPermutation<width, /*height = */ 0>
 {
   // There is exactly width^0 = 1 map from the empty set of rows to [0, width).
-  static constexpr uint64_t size = 1;
-  
-  PartialPermutation() {}
-  PartialPermutation(std::array<int, 0> in_rows) {}
-  PartialPermutation(uint64_t index) {}
+  static constexpr uint64_t size = 1;  
   constexpr uint64_t Index() const { return 0; }
   std::array<int, 0> rows;
 };
@@ -103,6 +103,14 @@ PartialPermutation<width, height - 1> PartialPermutation<width, height>::pop_fro
 {
   PartialPermutation<width, height - 1> answer;
   std::copy(rows.begin() + 1, rows.end(), answer.rows.begin());
+  return answer;
+}
+
+template<unsigned width, unsigned height>
+PartialPermutation<width, height - 1> PartialPermutation<width, height>::pop_back() const
+{
+  PartialPermutation<width, height - 1> answer;
+  std::copy(rows.begin(), rows.end() - 1, answer.rows.begin());
   return answer;
 }
 
