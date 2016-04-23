@@ -12,22 +12,22 @@
 struct ColumnOrderer {
   ColumnOrderer(): column_jumps(0), stabilizer(1) {}
   
-  bool accepts(std::bitset<N> row_value) const {
-    std::bitset<N> backward_jumps = (((row_value << 1) & ~row_value) >> 1);
-    return !((backward_jumps & ~column_jumps).any());
+  bool accepts(unsigned row_value) const {
+    unsigned backward_jumps = (((row_value << 1) & ~row_value & ((1u << N) - 1)) >> 1);
+    return (backward_jumps & ~column_jumps) == 0;
   }
   
-  void append(std::bitset<N> row_value) {
-    std::bitset<N> forward_jumps = ~row_value & (row_value >> 1);
+  void append(unsigned row_value) {
+    unsigned forward_jumps = ~row_value & (row_value >> 1);
     column_jumps |= forward_jumps;
   }
   
   void freeze_stabilizer() {
-    std::bitset<N-1> constants = ~(column_jumps.to_ullong());
+    unsigned constants = ~column_jumps & ((1u << (N - 1)) - 1);
     
     int column_streak = 1;
-    while (constants.any()) {
-      if (constants[0]) {
+    while (constants) {
+      if (constants % 2) {
         column_streak += 1;
         stabilizer *= column_streak;
       } else {
@@ -39,7 +39,7 @@ struct ColumnOrderer {
   
   // A 1 in position i means that in a more significant row than the current row,
   // there is a difference between i and i+1.
-  std::bitset<N> column_jumps;
+  unsigned column_jumps;
   
   // The stabilizer is a tentative version until freeze_stabilizer() is called.
   // It can only increase from 1 to its final value.
