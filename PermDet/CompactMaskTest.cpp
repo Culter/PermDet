@@ -16,8 +16,8 @@ void CompactMaskTest()
   CompactMask<10, 2> x;
   x.Reset();
   x.Set(std::array<int,2>{2,3});
-  std::cout << "x.mask[0] = " << std::bitset<64>(x.mask[0]) << std::endl;
-  std::cout << "x.mask[1] = " << std::bitset<64>(x.mask[1]) << std::endl;
+  std::cout << "x.mask[0] = " << std::bitset<64>(x.population_mask[0]) << std::endl;
+  std::cout << "x.mask[1] = " << std::bitset<64>(x.population_mask[1]) << std::endl;
   
   uint64_t lo;
   uint64_t hi;

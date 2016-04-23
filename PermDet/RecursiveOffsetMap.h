@@ -51,11 +51,12 @@ struct RecursiveOffsetMap {
     return answer;
   }
   
-  void split(const uint64_t occupation[TPerm::size],
-             uint64_t answer[width][TChildPerm::size]) const {
+  void split(const std::array<uint64_t, TPerm::size * 2>& occupation,
+             std::array<uint64_t, width * TChildPerm::size * 2>& answer) const {
     for (int m = 0; m < width; ++m) {
       for (uint64_t i = m * bin_size; i < (m + 1) * bin_size; ++i) {
-        answer[m][map[i]] = occupation[i];
+        answer[(m * TChildPerm::size + map[i])*2 + 0] = occupation[i*2 + 0];
+        answer[(m * TChildPerm::size + map[i])*2 + 1] = occupation[i*2 + 1];
       }
     }
   }
@@ -71,13 +72,14 @@ struct RecursiveOffsetMap {
     return answer;
   }
   
-  void combine(const uint64_t occupation[width][TPerm::size],
+  void combine(const std::array<uint64_t, width * TPerm::size * 2>& occupation,
                const std::bitset<width>& mask,
-               uint64_t answer[TPerm::size]) const {
+               std::array<uint64_t, TPerm::size * 2>& answer) const {
     for (int m = 0; m < width; ++m) {
       if (mask[m]) {
         for (int b = 0; b < TPerm::size; ++b) {
-          answer[b] &= occupation[m][b];
+          answer[b*2 + 0] &= occupation[(m * TPerm::size + b)*2 + 0];
+          answer[b*2 + 1] &= occupation[(m * TPerm::size + b)*2 + 1];
         }
       }
     }
@@ -89,6 +91,16 @@ struct RecursiveOffsetMap {
 
 template<unsigned width>
 struct RecursiveOffsetMap<width, /*height = */ 0> {
+  void combine(const std::array<uint64_t, width * 2>& occupation,
+               const std::bitset<width>& mask,
+               std::array<uint64_t, 2>& answer) const {
+    for (int m = 0; m < width; ++m) {
+      if (mask[m]) {
+        answer[0] &= occupation[m*2 + 0];
+        answer[1] &= occupation[m*2 + 1];
+      }
+    }
+  }
 };
 
 #endif /* RecursiveOffsetMap_h */

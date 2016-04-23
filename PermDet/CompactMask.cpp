@@ -12,7 +12,7 @@
 
 #include "CompactMask.h"
 
-uint64_t MaskAndCountReference(const uint64_t population_mask[2],
+uint64_t MaskAndCountReference(const std::array<uint64_t, 2>& population_mask,
                                const uint64_t row_mask_lo,
                                const uint64_t row_mask_hi) {
   const uint64_t masked_population_lo = row_mask_lo | population_mask[0];
@@ -28,7 +28,7 @@ uint64_t MaskAndCountReference(const uint64_t population_mask[2],
   return subtotal;
 }
 
-void MaskAndCountFast(const uint64_t population_mask[2],
+void MaskAndCountFast(const std::array<uint64_t, 2>& population_mask,
                       const uint64_t row_mask_lo[],
                       const uint64_t row_mask_hi[],
                       int num_rows,

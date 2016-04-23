@@ -36,11 +36,10 @@ template<unsigned width, unsigned height>
 struct CompactMask {
   typedef PartialPermutation<width, height> TPerm;
   typedef PartialPermutation<width, height - 2> TPermMinusTwo;
-//  typedef PartialPermutation<width, height - 3> TChildPermMinusTwo;
   
   void Reset() {
     constexpr uint64_t empty = EmptyPopulationMask(width);
-    std::fill(mask, mask + 2 * TPermMinusTwo::size, empty);
+    std::fill(std::begin(population_mask), std::end(population_mask), empty);
   }
   
   void Set(const TPerm& perm) {
@@ -48,19 +47,29 @@ struct CompactMask {
     const int last_row = perm.rows[height - 1];
     TPermMinusTwo outer_index_bearer = perm.pop_back().pop_back();
     
-    uint64_t outer_index = outer_index_bearer.Index() * 2 + MaskBlockFromPenultimateRow(next_last_row);
+    uint64_t outer_index = 2 * outer_index_bearer.Index() + MaskBlockFromPenultimateRow(next_last_row);
     int bit_index = MaskIndexFromLastRow(last_row) + MaskOffsetFromPenultimateRow(next_last_row);
     
-    mask[outer_index] &= ~((uint64_t)1 << bit_index);
+    population_mask[outer_index] &= ~((uint64_t)1 << bit_index);
   }
   
-  alignas(32) uint64_t mask[2 * TPermMinusTwo::size];
-//  alignas(32) uint64_t pre_mask[width * 2 * TChildPermMinusTwo::size];
-  CompactMask<width, height - 1> child;
+  alignas(32) std::array<uint64_t, TPermMinusTwo::size * 2> population_mask;
 };
 
 template<unsigned width>
 struct CompactMask<width, /*height = */ 1> {};
+
+template<unsigned width, unsigned height>
+struct SplitCompactMask {
+  typedef PartialPermutation<width, height - 3> TPermMinusThree;
+  
+  void Reset() {
+    constexpr uint64_t empty = EmptyPopulationMask(width);
+    std::fill(std::begin(population_mask), std::end(population_mask), empty);
+  }
+  
+  alignas(32) std::array<uint64_t, width * TPermMinusThree::size * 2> population_mask;
+};
 
 template<unsigned width>
 void GetRowMask(int row_value, uint64_t& lo, uint64_t& hi) {
@@ -78,11 +87,11 @@ void GetRowMask(int row_value, uint64_t& lo, uint64_t& hi) {
   }
 }
 
-uint64_t MaskAndCountReference(const uint64_t population_mask[2],
+uint64_t MaskAndCountReference(const std::array<uint64_t, 2>& population_mask,
                                const uint64_t row_mask_lo,
                                const uint64_t row_mask_hi);
 
-void MaskAndCountFast(const uint64_t population_mask[2],
+void MaskAndCountFast(const std::array<uint64_t, 2>& population_mask,
                       const uint64_t row_mask_lo[],
                       const uint64_t row_mask_hi[],
                       int num_rows,
