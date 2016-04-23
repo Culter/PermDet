@@ -213,7 +213,7 @@ namespace EngineFlatterDetail {
                                  ColumnOrderer column_orderer) {
     if (k_profile) that.work_counts[N - 3]++;
     
-    for (int next_class = row_orderer.max_row_class; next_class < EngineFlatter::num_row_classes; ++next_class) {
+    for (int next_class = row_orderer.max_row_class; next_class < EngineFlatter::num_row_classes;) {
       auto temp_row_orderer = row_orderer;
       if (temp_row_orderer.accepts_class(next_class)) {
         temp_row_orderer.append(next_class, 0);  // TODO: Split up the usage here
@@ -223,10 +223,14 @@ namespace EngineFlatterDetail {
         constexpr uint64_t group_order = factorial(N - 1) * factorial(N);
         uint64_t orbit = group_order / (temp_row_orderer.stabilizer * column_orderer.stabilizer);
         
+        int after_class = (next_class == row_orderer.max_row_class) ? (next_class + 1) : (EngineFlatter::num_row_classes);
+        
         int a = that.row_class_offsets[next_class];
         int b = round_up(that.row_class_offsets[next_class]);
-        int c = round_down(that.row_class_offsets[next_class + 1]);
-        int d = that.row_class_offsets[next_class + 1];
+        int c = round_down(that.row_class_offsets[after_class]);
+        int d = that.row_class_offsets[after_class];
+        
+        next_class = after_class;
         
         for (int next_row_index = a; next_row_index < b; ++next_row_index) {
           if (temp_row_orderer.stabilizer == 1 || column_orderer.stabilizer == 1) {
