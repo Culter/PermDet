@@ -91,9 +91,8 @@ uint64_t MaskAndCountReference(const std::array<uint64_t, 2>& population_mask,
                                const uint64_t row_mask_lo,
                                const uint64_t row_mask_hi);
 
-void MaskAndCountFast(const std::array<uint64_t, 2>& population_mask,
+uint64_t MaskAndCountFast(const std::array<uint64_t, 2>& population_mask,
                       const uint64_t row_mask_lo[],
                       const uint64_t row_mask_hi[],
-                      int num_rows,
-                      uint64_t output[4]);
+                      int num_rows);
 #endif /* CompactMask_h */

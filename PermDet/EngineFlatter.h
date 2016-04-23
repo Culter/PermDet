@@ -17,6 +17,9 @@
 
 static constexpr bool k_profile = false;
 
+constexpr int round_down(int x) { return x & ~3; }
+constexpr int round_up(int x) { return ((x - 1) & ~3) + 4; }
+
 class EngineFlatter {
 public:
   static constexpr int num_row_values = ((uint64_t)1 << N);
@@ -220,9 +223,43 @@ namespace EngineFlatterDetail {
         constexpr uint64_t group_order = factorial(N - 1) * factorial(N);
         uint64_t orbit = group_order / (temp_row_orderer.stabilizer * column_orderer.stabilizer);
         
-        for (int next_row_index = that.row_class_offsets[next_class];
-             next_row_index < that.row_class_offsets[next_class + 1];
-             ++next_row_index) {
+        int a = that.row_class_offsets[next_class];
+        int b = round_up(that.row_class_offsets[next_class]);
+        int c = round_down(that.row_class_offsets[next_class + 1]);
+        int d = that.row_class_offsets[next_class + 1];
+        
+        for (int next_row_index = a; next_row_index < b; ++next_row_index) {
+          if (temp_row_orderer.stabilizer == 1 || column_orderer.stabilizer == 1) {
+            that.local_sum += (MaskAndCountReference(mask_odd.population_mask,
+                                                     that.row_value_masks_lo[next_row_index],
+                                                     that.row_value_masks_hi[next_row_index]) +
+                               MaskAndCountReference(mask_even.population_mask,
+                                                     that.row_value_masks_lo[next_row_index],
+                                                     that.row_value_masks_hi[next_row_index])) * (orbit / 2);
+          } else {
+            that.local_sum += MaskAndCountReference(mask_odd.population_mask,
+                                                    that.row_value_masks_lo[next_row_index],
+                                                    that.row_value_masks_hi[next_row_index]) * orbit;
+          }
+        }
+        
+        if (temp_row_orderer.stabilizer == 1 || column_orderer.stabilizer == 1) {
+          that.local_sum += (MaskAndCountFast(mask_odd.population_mask,
+                                              &that.row_value_masks_lo[b],
+                                              &that.row_value_masks_hi[b],
+                                              (c-b)/4) +
+                             MaskAndCountFast(mask_even.population_mask,
+                                              &that.row_value_masks_lo[b],
+                                              &that.row_value_masks_hi[b],
+                                              (c-b)/4)) * (orbit / 2);
+        } else {
+          that.local_sum += MaskAndCountFast(mask_odd.population_mask,
+                                             &that.row_value_masks_lo[b],
+                                             &that.row_value_masks_hi[b],
+                                             (c-b)/4) * orbit;
+        }
+        
+        for (int next_row_index = c; next_row_index < d; ++next_row_index) {
           if (temp_row_orderer.stabilizer == 1 || column_orderer.stabilizer == 1) {
             that.local_sum += (MaskAndCountReference(mask_odd.population_mask,
                                                      that.row_value_masks_lo[next_row_index],

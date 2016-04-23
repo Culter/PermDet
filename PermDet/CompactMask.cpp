@@ -28,11 +28,10 @@ uint64_t MaskAndCountReference(const std::array<uint64_t, 2>& population_mask,
   return subtotal;
 }
 
-void MaskAndCountFast(const std::array<uint64_t, 2>& population_mask,
+uint64_t MaskAndCountFast(const std::array<uint64_t, 2>& population_mask,
                       const uint64_t row_mask_lo[],
                       const uint64_t row_mask_hi[],
-                      int num_rows,
-                      uint64_t output[4]) {
+                      int num_rows) {
   const __m256i ones = _mm256_set1_epi64x(1ull);
   const __m256i first_bits = _mm256_set1_epi64x(0b00000000000000000000000000001111ull);
   const __m256i multiplier = _mm256_set1_epi64x(0b10000010000010000010000010000000ull);
@@ -81,5 +80,8 @@ void MaskAndCountFast(const std::array<uint64_t, 2>& population_mask,
     total = _mm256_add_epi64(total, subtotal);
   }
   
+  uint64_t output[4];
   _mm256_store_si256((__m256i*)output, total);
+  
+  return output[0] + output[1] + output[2] + output[3];
 }
