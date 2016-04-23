@@ -246,7 +246,7 @@
 				CLANG_X86_VECTOR_INSTRUCTIONS = avx2;
 				DEAD_CODE_STRIPPING = YES;
 				GCC_UNROLL_LOOPS = YES;
-				LLVM_LTO = NO;
+				LLVM_LTO = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
