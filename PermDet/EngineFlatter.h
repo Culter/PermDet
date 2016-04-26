@@ -11,14 +11,12 @@
 #include "ImmediateRowOrderer.h"
 #include "ColumnOrderer.h"
 #include "CompactMask.h"
+#include "OptimalReference.h"
 
 #ifndef EngineFlatter_h
 #define EngineFlatter_h
 
 static constexpr bool k_profile = false;
-
-constexpr int round_down(int x) { return x & ~3; }
-constexpr int round_up(int x) { return ((x - 1) & ~3) + 4; }
 
 class EngineFlatter {
 public:
