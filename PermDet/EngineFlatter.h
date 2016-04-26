@@ -16,8 +16,6 @@
 #ifndef EngineFlatter_h
 #define EngineFlatter_h
 
-static constexpr bool k_profile = false;
-
 class EngineFlatter {
 public:
   static constexpr int num_row_values = ((uint64_t)1 << N);
@@ -58,8 +56,6 @@ public:
     for (int i = 0; i < num_row_classes; ++i) {
       row_class_offsets[i + 1] = row_class_offsets[i] + factorial(N) / (factorial(i) * factorial(N - i));
     }
-    
-    if (k_profile) std::fill(work_counts.begin(), work_counts.end(), 0);
   }
   
   uint64_t Count(int first_row_index);
@@ -76,8 +72,6 @@ public:
   
   alignas(32) uint64_t row_value_masks_lo[num_row_values];
   alignas(32) uint64_t row_value_masks_hi[num_row_values];
-  
-  std::array<uint64_t, N> work_counts;
   
 private:
   const RecursiveOffsetMap<N, N - 2> offset_maps;
@@ -170,8 +164,6 @@ namespace EngineFlatterDetail {
                           int row_class,
                           int row_index,
                           ColumnOrderer column_orderer) {
-    if (k_profile) that.work_counts[row]++;
-    
     OptimalReference<SplitCompactMask<N, N - row - 1>> child_mask_even;
     OptimalReference<SplitCompactMask<N, N - row - 1>> child_mask_odd;
     
@@ -209,8 +201,6 @@ namespace EngineFlatterDetail {
                                  int row_class,
                                  int row_index,
                                  ColumnOrderer column_orderer) {
-    if (k_profile) that.work_counts[N - 3]++;
-    
     for (int next_class = row_orderer.max_row_class; next_class < EngineFlatter::num_row_classes;) {
       auto temp_row_orderer = row_orderer;
       if (temp_row_orderer.accepts_class(next_class)) {
@@ -298,13 +288,6 @@ uint64_t EngineFlatter::Count(int first_row_index) {
                                          first_row_class,
                                          first_row_index,
                                          column_orderer);
-  if (k_profile) {
-    for (int i = 0; i < N; ++i) {
-      if (work_counts[i] > 0) {
-        std::cout << "work_counts[" << i << "] = " << work_counts[i] << std::endl;
-      }
-    }
-  }
   return local_sum;
 }
 
