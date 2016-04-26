@@ -9,6 +9,7 @@
 #ifndef CompactMask_h
 #define CompactMask_h
 
+#include <type_traits>
 #include "PartialPermutation.h"
 
 // --99999-88888-77777-66666-55555-;--44444-33333-22222-11111-00000-
@@ -95,4 +96,20 @@ uint64_t MaskAndCountFast(const std::array<uint64_t, 2>& population_mask,
                       const uint64_t row_mask_lo[],
                       const uint64_t row_mask_hi[],
                       int num_rows);
+
+template<typename T>
+struct StackReference {
+  T _data;
+  T* operator->() { return &_data; }
+};
+
+template<typename T>
+struct HeapReference {
+  std::shared_ptr<T> _data_ptr;
+  HeapReference() : _data_ptr{std::make_shared<T>()} {}
+  std::shared_ptr<T>& operator->() { return _data_ptr; }
+};
+
+template<typename T>
+struct OptimalReference : std::conditional<sizeof(T) >= 1020*8, HeapReference<T>, StackReference<T>>::type {};
 #endif /* CompactMask_h */

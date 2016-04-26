@@ -18,7 +18,7 @@
 
 int main() {
   typedef EngineFlatter ChosenEngine;
-  constexpr bool serial = true;
+  constexpr bool serial = false;
   constexpr bool first_three = false;
   
 //  CompactMaskTest();
@@ -32,7 +32,7 @@ int main() {
     ChosenEngine seed;
     // Serial execution, by value of first row (without entry for last column)
     for (int i = 0; i < num_threads; ++i) {
-      subtotals[i] = ChosenEngine(seed).Count(i);
+      subtotals[i] = ChosenEngine{seed}.Count(i);
       if (subtotals[i]) {
         std::cout << "Thread " << i << ": subtotal " << subtotals[i] << std::endl;
         sum += subtotals[i];
@@ -57,22 +57,26 @@ int main() {
     std::mutex io_mutex;
     
     for (int i = 0; i < seeds.size(); ++i) {
-      std::cout << "Scheduling thread " << i << " with value " << first_rows[i] << std::endl;
-      int first_row = first_rows[i];
-      ChosenEngine& engine = seeds[i];
-      uint64_t& subtotal = subtotals[first_row];
+      {
+        std::lock_guard<std::mutex> lock(io_mutex);
+        std::cout << "Scheduling thread " << i << " with value " << first_rows[i] << std::endl;
+      }
       
-      threads.emplace_back([&engine, first_row, &subtotal, &io_mutex]{
+      int first_row = first_rows[i];
+      ChosenEngine* engine = &seeds[i];
+      uint64_t* subtotal = &subtotals[first_rows[i]];
+      
+      threads.emplace_back([engine, first_row, subtotal, &io_mutex]{
         {
           std::lock_guard<std::mutex> lock(io_mutex);
           std::cout << "Starting thread with value " << first_row << std::endl;
         }
         
-        subtotal = engine.Count(first_row);
+        *subtotal = engine->Count(first_row);
         
         {
           std::lock_guard<std::mutex> lock(io_mutex);
-          std::cout << "Thread value " << first_row << ": subtotal " << subtotal << std::endl;
+          std::cout << "Thread value " << first_row << ": subtotal " << *subtotal << std::endl;
         }
       });
     }
