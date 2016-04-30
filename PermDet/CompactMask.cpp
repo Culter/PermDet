@@ -65,14 +65,18 @@ uint64_t MaskAndCountFast(const std::array<uint64_t, 2>& population_mask,
     // ------9-----8-----7-----6-----5-;------4-----3-----2-----1-----0-
     const __m256i m_masked_population = _mm256_and_si256(m_masked_population_2, _mm256_srli_epi64(m_masked_population_2, 1));
     
+    // Instead of either the following calls to _mm256_shuffle_epi32(2,3,0,1),
+    // it would be equivalent for our purposes to call _mm256_srli_epi64(32).
+    // The shuffle is slightly faster.
     // ------9-----8-----7-----6-----5-;-----**----**----**----**----**-
-    const __m256i m_compact_population = _mm256_add_epi64(m_masked_population, _mm256_srli_epi64(m_masked_population, 32));
+    const __m256i m_compact_population = _mm256_add_epi64(m_masked_population,
+                                                          _mm256_shuffle_epi32(m_masked_population, _MM_SHUFFLE(2,3,0,1)));
     
     // ------??---???---???--????--****;--????---???---???----??--------
     const __m256i count_shifted = _mm256_mul_epu32(m_compact_population, multiplier);
     
     // --------------------------------;------??---???---???--????--****
-    const __m256i count_with_garbage = _mm256_srli_epi64(count_shifted, 32);
+    const __m256i count_with_garbage = _mm256_shuffle_epi32(count_shifted, _MM_SHUFFLE(2,3,0,1));
     
     const __m256i count = _mm256_and_si256(count_with_garbage, first_bits);
     const __m256i subtotal = _mm256_sllv_epi64(ones, count);

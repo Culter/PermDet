@@ -94,6 +94,7 @@ struct RecursiveOffsetMap<width, /*height = */ 0> {
   void combine(const std::array<uint64_t, width * 2>& occupation,
                const std::bitset<width>& mask,
                std::array<uint64_t, 2>& answer) const {
+    // Trust the auto-vectorizer to optimize this loop.
     for (int m = 0; m < width; ++m) {
       if (mask[m]) {
         answer[0] &= occupation[m*2 + 0];
