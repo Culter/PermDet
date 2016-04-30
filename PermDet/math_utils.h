@@ -13,7 +13,7 @@
 #include <array>
 
 // The number of rows and columns of the matrices to count.
-constexpr int N = 7;
+constexpr int N = 8;
 
 constexpr int round_down(int x) { return x & ~3; }
 constexpr int round_up(int x) { return (x + 3) & ~3; }
